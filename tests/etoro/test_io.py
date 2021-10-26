@@ -1,9 +1,5 @@
 from finvestor.etoro.io import parse_account_summary, parse_financial_summary
-from finvestor.etoro.schemas import (
-    EtoroAccountStatement,
-    EtoroAccountSummary,
-    EtoroFinancialSummary,
-)
+from finvestor.etoro.schemas import EtoroAccountSummary, EtoroFinancialSummary
 
 
 def test_parse_account_summary(snapshot, etoro_account_summary_df):
