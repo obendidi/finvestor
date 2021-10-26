@@ -1,0 +1,37 @@
+# name: test_parse_account_summary
+  <class 'dict'> {
+    'adjustments': 9.87,
+    'created_at': datetime.datetime(1999, 1, 1, 10, 28, 13),
+    'credits': 0.0,
+    'currency': 'USD',
+    'deposits': 123456.789,
+    'end_date': datetime.datetime(1999, 1, 1, 23, 59, 59),
+    'final_realised_equity': 1101079.94,
+    'final_unrealised_equity': 1103079.94,
+    'initial_realised_equity': 0.0,
+    'initial_unrealised_equity': 0.0,
+    'name': 'John Doe',
+    'realised_profit_loss': 987654.321,
+    'refunds': 0.0,
+    'rollover_fees': 1.17,
+    'start_date': datetime.datetime(1998, 1, 1, 0, 0),
+    'username': 'apes_together_strong',
+    'withdrawal_fees': 30.0,
+    'withdrawals': 10000.0,
+  }
+---
+# name: test_parse_financial_summary
+  <class 'dict'> {
+    'cfd_commissions': 60.87,
+    'cfd_dividends_profit_loss': 3.45,
+    'cfd_profit_loss': 7654.0,
+    'crypto_commissions': 2.01,
+    'crypto_profit_loss': 8.8,
+    'etf_commissions': 0.0,
+    'etf_profit_loss': 0.0,
+    'fees': 8.77,
+    'refunds': 2.6,
+    'stock_dividends_profit': 6.49,
+    'stocks_profit_loss': 98000.321,
+  }
+---
