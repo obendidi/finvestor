@@ -4,6 +4,8 @@ on: [push]
 
 jobs:
   test:
+    strategy:
+      fail-fast: true
     runs-on: ubuntu-latest
     steps:
       #----------------------------------------------
@@ -42,4 +44,12 @@ jobs:
       #              run tests
       #----------------------------------------------
       - name: Run tests
-        run: poetry run python -m pytest
+        run: poetry run pytest
+      #----------------------------------------------
+      #             upload coverage stats
+      #----------------------------------------------
+      - name: Upload coverage
+        uses: codecov/codecov-action@v2
+        with:
+          file: ./coverage.xml
+          fail_ci_if_error: true

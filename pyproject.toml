@@ -54,7 +54,7 @@ profile = "black"
 known_first_party = ["finvestor"]
 
 [tool.pytest.ini_options]
-addopts = "-ra -q -vv --cov=finvestor --cov-report=term"
+addopts = "-ra -q -vv --cov=finvestor --cov-report=term --cov-report=xml"
 
 [tool.coverage.run]
 branch = true
