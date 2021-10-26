@@ -24,6 +24,7 @@ pytest = "^6.2.5"
 pytest-cov = "^3.0.0"
 syrupy = "^1.4.7"
 pandas-stubs = "^1.2.0"
+pre-commit = "^2.15.0"
 
 [build-system]
 requires = ["poetry-core>=1.10.0"]
