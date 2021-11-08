@@ -51,8 +51,9 @@ class EtoroFinancialSummary(BaseModel):
 class EtoroAccountStatement(BaseModel):
     account_summary: EtoroAccountSummary
     financial_summary: EtoroFinancialSummary
-    closed_positions: pd.DataFrame
-    account_activity: pd.DataFrame
+    transactions_df: pd.DataFrame
+    fees_df: pd.DataFrame
+    deposits_df: pd.DataFrame
 
     class Config:
         arbitrary_types_allowed = True
