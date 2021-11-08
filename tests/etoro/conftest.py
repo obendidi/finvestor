@@ -123,11 +123,36 @@ def etoro_financial_summary_df() -> pd.DataFrame:
 
 
 @pytest.fixture
+def etoro_closed_positions_df() -> pd.DataFrame:
+    raw_data = {
+        "Position ID": {0: 1, 1: 2},
+        "Action": {0: "Buy Awesome-stock Inc.", 1: "Sell Bad company"},
+        "Amount": {0: 1500.0, 1: 750.00},
+        "Units": {0: 500.12, 1: 6.52146},
+        "Open Date": {0: "01/01/2000 09:30:07", 1: "01/01/2000 10:10:15"},
+        "Close Date": {0: "12/06/2000 16:33:45", 1: "07/02/2002 15:12:15"},
+        "Leverage": {0: 1, 1: 5},
+        "Spread": {0: 0.0, 1: 10.43},
+        "Profit": {0: 512.65, 1: -654.21},
+        "Open Rate": {0: 2.99, 1: 115},
+        "Close Rate": {0: 4.02, 1: 215.32},
+        "Take profit rate": {0: 10, 1: 100},
+        "Stop lose rate": {0: 1, 1: 300},
+        "Rollover Fees and Dividends": {0: 0.0, 1: -2.03},
+        "Copied From": {0: "-", 1: "-"},
+        "Type": {0: "Real", 1: "CFD"},
+        "ISIN": {0: "US215621452", 1: "CH015236589"},
+        "Notes": {0: "", 1: ""},
+    }
+    return pd.DataFrame(raw_data)
+
+
+@pytest.fixture
 def etoro_account_statement_sheets(
     etoro_account_summary_df: pd.DataFrame,
-    etoro_fiNonecial_summary_df: pd.DataFrame,
+    etoro_financial_summary_df: pd.DataFrame,
 ) -> Dict[str, pd.DataFrame]:
     return {
         "Account Summary": etoro_account_summary_df,
-        "FiNonecial Summary": etoro_fiNonecial_summary_df,
+        "Financial Summary": etoro_financial_summary_df,
     }

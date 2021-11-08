@@ -35,3 +35,71 @@
     'stocks_profit_loss': 98000.321,
   }
 ---
+# name: test_pre_process_closed_positions_df
+  <class 'dict'> {
+    'ISIN': <class 'dict'> {
+      0: 'US215621452',
+      1: 'CH015236589',
+    },
+    'close_date': <class 'dict'> {
+      0: '12/06/2000 16:33:45',
+      1: '07/02/2002 15:12:15',
+    },
+    'close_rate': <class 'dict'> {
+      0: 4.02,
+      1: 215.32,
+    },
+    'invested': <class 'dict'> {
+      0: 1500.0,
+      1: 750.0,
+    },
+    'leverage': <class 'dict'> {
+      0: 1,
+      1: 5,
+    },
+    'name': <class 'dict'> {
+      0: 'Awesome-stock Inc.',
+      1: 'Bad company',
+    },
+    'open_date': <class 'dict'> {
+      0: '01/01/2000 09:30:07',
+      1: '01/01/2000 10:10:15',
+    },
+    'open_rate': <class 'dict'> {
+      0: 2.99,
+      1: 115.0,
+    },
+    'position_id': <class 'dict'> {
+      0: 1,
+      1: 2,
+    },
+    'profit': <class 'dict'> {
+      0: 512.65,
+      1: -654.21,
+    },
+    'rollover_fees_and_dividends': <class 'dict'> {
+      0: 0.0,
+      1: -2.03,
+    },
+    'spread': <class 'dict'> {
+      0: 0.0,
+      1: 10.43,
+    },
+    'stop_loss_rate': <class 'dict'> {
+      0: 1,
+      1: 300,
+    },
+    'take_profit_rate': <class 'dict'> {
+      0: 10,
+      1: 100,
+    },
+    'type': <class 'dict'> {
+      0: 'BUY',
+      1: 'SELL',
+    },
+    'units': <class 'dict'> {
+      0: 500.12,
+      1: 6.52146,
+    },
+  }
+---
