@@ -1,6 +1,5 @@
 from datetime import datetime
 
-import pandas as pd
 from pydantic import BaseModel, Field, validator
 
 
@@ -46,14 +45,3 @@ class EtoroFinancialSummary(BaseModel):
     crypto_commissions: float = Field(..., alias="Commissions (spread) on Crypto")
     etf_commissions: float = Field(..., alias="Commissions (spread) on ETFs")
     fees: float = Field(..., alias="Fees")
-
-
-class EtoroAccountStatement(BaseModel):
-    account_summary: EtoroAccountSummary
-    financial_summary: EtoroFinancialSummary
-    transactions_df: pd.DataFrame
-    fees_df: pd.DataFrame
-    deposits_df: pd.DataFrame
-
-    class Config:
-        arbitrary_types_allowed = True
