@@ -29,16 +29,21 @@ def aggregate_transactions_df(
     df = closed_positions_df.merge(
         account_activity_closed_positions_df, on="position_id"
     )
-    df = df.drop(columns=["amount", "date"], errors="ignore")
 
-    df = account_activity_open_positions_df.drop(
-        columns=["date"], errors="ignore"
-    ).merge(
-        df.drop(columns=["invested", "realized_equity"], errors="ignore"),
+    df = account_activity_open_positions_df.merge(
+        df.drop(
+            columns=["amount", "date", "invested", "realized_equity", "open_date"],
+            errors="ignore",
+        ),
         on=("position_id", "details"),
         how="left",
         suffixes=("_open", "_close"),
     )
+    df[["ticker", "currency"]] = df["details"].str.split("/", n=1, expand=True)
+    df = df.drop(columns=["details"], errors="ignore")
+    ordered_columns = list(df.columns[-2:]) + list(df.columns[:-2])
+    df = df[ordered_columns]
+    df["position_id"] = df["position_id"].astype("int64")
     return df
 
 
@@ -121,7 +126,7 @@ def pre_process_account_activity_df(
 
     open_df = df[df.type == "Open Position"]
     open_df = open_df.drop(columns=["type", "realized_equity_change"], errors="ignore")
-    open_df = open_df.rename(columns={"amount": "invested"})
+    open_df = open_df.rename(columns={"amount": "invested", "date": "open_date"})
 
     closed_df = df[df.type == "Profit/Loss of Trade"]
     closed_df = closed_df.drop(columns=["type"], errors="ignore")
