@@ -26,3 +26,11 @@ def quote_summary_snapshot(snapshot):
 def yf_scrape_response(data_dir) -> str:
     with open(os.path.join(data_dir, "yf_scrape_response.html"), "r") as file:
         return file.read()
+
+
+@pytest.fixture(autouse=True)
+def env_setup(monkeypatch, request):
+    if "disable_auto_env_setup" in request.keywords:
+        return
+    monkeypatch.setenv("YAHOO_FINANCE_BASE_URL", "https://some-overriden-url")
+    monkeypatch.setenv("YAHOO_FINANCE_SCRAPE_URL", "https://some-other-overriden-url")
