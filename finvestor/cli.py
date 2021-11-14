@@ -1,10 +1,13 @@
 from typing import Optional
+
 import typer
 
 from finvestor import __version__
 from finvestor.etoro.cli import app as etoro_app
 
-app = typer.Typer(help="CLI for managing your finvestor applications.")
+app = typer.Typer(
+    help="CLI for managing your finvestor applications.", no_args_is_help=True
+)
 
 app.add_typer(etoro_app, name="etoro", invoke_without_command=True)
 
@@ -17,7 +20,7 @@ def version_callback(value: bool):
 
 @app.callback()
 def main(
-    version: Optional[bool] = typer.Option(
+    _version: Optional[bool] = typer.Option(
         None, "-v", "--version", callback=version_callback
     )
 ):

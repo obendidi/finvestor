@@ -1,15 +1,20 @@
-import logging
+from typing import List
 
-from finvestor.etoro.schemas import EtoroAccountStatement
+import attr
+import pandas as pd
 
-logger = logging.getLogger(__name__)
+from finvestor.alpaca import AlpacaClient
 
 
-def get_deposits_breakdown(statement: EtoroAccountStatement):
-    summary_deposit = statement.account_summary.deposits
-    deposits_df = statement.account_activity.loc[
-        statement.account_activity["Type"] == "Deposit"
-    ].filter(items=["Date", "Details", "Amount"])
-    print(deposits_df)
-    print(summary_deposit)
-    print(deposits_df["Amount"].sum())
+@attr.s
+class EtoroPortfolio:
+    transactions: pd.DataFrame = attr.ib(kw_only=True)
+    alpaca_client = AlpacaClient()
+
+    @property
+    def cash(self) -> float:
+        return self.transactions.iloc[-1]["balance_open"]
+
+    @property
+    def tickers(self) -> List[str]:
+        return list(self.transactions["ticker"].unique())

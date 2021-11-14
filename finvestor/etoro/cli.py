@@ -1,9 +1,10 @@
-from pathlib import Path
 import os
+from pathlib import Path
+
+import pandas as pd
 import typer
 
-from finvestor.etoro.io import load_etoro_account_statement
-from finvestor.etoro.portfolio import get_deposits_breakdown
+from finvestor.etoro.parsers import parse_etoro_account_statement
 
 app = typer.Typer(help="Load and process an etoro account statement.")
 
@@ -29,11 +30,25 @@ def main(
         f"Loading Etoro account statement '{os.path.basename(filepath)}'...",
         fg=typer.colors.BRIGHT_GREEN,
     )
-    statement = load_etoro_account_statement(filepath)
+    sheets = pd.read_excel(filepath, sheet_name=None)
+    statement = parse_etoro_account_statement(sheets)
     typer.secho(
         f"Loaded Etoro account statement of user '{statement.account_summary.name}' "
         f"from '{statement.account_summary.start_date}' "
         f"to '{statement.account_summary.end_date}'",
         fg=typer.colors.BRIGHT_GREEN,
     )
-    get_deposits_breakdown(statement)
+    typer.secho(
+        statement.transactions[
+            [
+                "ticker",
+                "currency",
+                "name",
+                "open_date",
+                "close_date",
+                "open_rate",
+                "close_rate",
+            ]
+        ].tail(50),
+        fg=typer.colors.CYAN,
+    )

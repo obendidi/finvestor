@@ -1,37 +1,51 @@
+from typing import Dict, Tuple
+
 import pandas as pd
 
-from typing import Tuple
-from finvestor.etoro.schemas import EtoroAccountSummary, EtoroFinancialSummary
+from finvestor.etoro.schemas import (
+    EtoroAccountStatement,
+    EtoroAccountSummary,
+    EtoroFinancialSummary,
+)
+from finvestor.etoro.utils import ETORO_DATETIME_FORMAT
 
 
-def aggregate_transactions_df(
-    closed_positions_df: pd.DataFrame,
-    account_activity_open_positions_df: pd.DataFrame,
-    account_activity_closed_positions_df: pd.DataFrame,
-) -> pd.DataFrame:
-    """Aggregate all transactions found in an etoro account statement.
+def parse_etoro_account_statement(
+    etoro_account_statement_sheets: Dict[str, pd.DataFrame],
+) -> EtoroAccountStatement:
+    """Parse an etoro account statement sheets loaded using pd.read_excel(...).
 
     Args:
-        closed_positions_df: pre-processes closed positions sheets found in an
-            etoro account statement
-        account_activity_open_positions_df: Filtered open positions found in
-            the account activit sheet of an etoro account statement
-        account_activity_closed_positions_df: Filtered closed positions found in
-            the account activit sheet of an etoro account statement
+        etoro_account_statement_sheets (Dict[str, pd.DataFrame]): Dict with sheets
+            ass pandas dataframe, and sheet names as keys
 
     Returns:
-        pd.DataFrame: All transaction aggregated in one single dataframe
+        EtoroAccountStatement
     """
+
+    closed_positions_df = pre_process_closed_positions_df(
+        etoro_account_statement_sheets["Closed Positions"]
+    )
+    (
+        fees_df,
+        deposits_df,
+        withdrawals_df,
+        account_activity_open_positions_df,
+        account_activity_closed_positions_df,
+    ) = pre_process_account_activity_df(
+        etoro_account_statement_sheets["Account Activity"]
+    )
+
     assert len(closed_positions_df) == len(
         account_activity_closed_positions_df
     ), "Invalid or corrupt data."
 
-    df = closed_positions_df.merge(
+    all_closed = closed_positions_df.merge(
         account_activity_closed_positions_df, on="position_id"
     )
 
-    df = account_activity_open_positions_df.merge(
-        df.drop(
+    transaction = account_activity_open_positions_df.merge(
+        all_closed.drop(
             columns=["amount", "date", "invested", "realized_equity", "open_date"],
             errors="ignore",
         ),
@@ -39,12 +53,32 @@ def aggregate_transactions_df(
         how="left",
         suffixes=("_open", "_close"),
     )
-    df[["ticker", "currency"]] = df["details"].str.split("/", n=1, expand=True)
-    df = df.drop(columns=["details"], errors="ignore")
-    ordered_columns = list(df.columns[-2:]) + list(df.columns[:-2])
-    df = df[ordered_columns]
-    df["position_id"] = df["position_id"].astype("int64")
-    return df
+    transaction[["ticker", "currency"]] = transaction["details"].str.split(
+        "/", n=1, expand=True
+    )
+    transaction = transaction.drop(columns=["details"], errors="ignore")
+    ordered_columns = list(transaction.columns[-2:]) + list(transaction.columns[:-2])
+    transaction = transaction[ordered_columns]
+    transaction["position_id"] = transaction["position_id"].astype("int64")
+    transaction["open_date"] = pd.to_datetime(
+        transaction["open_date"], format=ETORO_DATETIME_FORMAT, utc=True
+    )
+    transaction["close_date"] = pd.to_datetime(
+        transaction["close_date"], format=ETORO_DATETIME_FORMAT, utc=True
+    )
+
+    return EtoroAccountStatement(
+        account_summary=parse_account_summary(
+            etoro_account_statement_sheets["Account Summary"]
+        ),
+        financial_summary=parse_financial_summary(
+            etoro_account_statement_sheets["Financial Summary"]
+        ),
+        transactions=transaction,
+        fees=fees_df,
+        deposits=deposits_df,
+        withdrawals=withdrawals_df,
+    )
 
 
 def parse_account_summary(df: pd.DataFrame) -> EtoroAccountSummary:
@@ -84,7 +118,7 @@ def parse_financial_summary(df: pd.DataFrame) -> EtoroFinancialSummary:
 
 def pre_process_account_activity_df(
     df: pd.DataFrame,
-) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """Pre-process the account activity sheet from etoro account statement.
 
     -> Drop the column 'NWA', no information about it yet.
@@ -101,7 +135,7 @@ def pre_process_account_activity_df(
         df: The account activity dataframe.
 
     Returns:
-        Tuple[fees_df, deposits_df, open_df, closed_df]
+        Tuple[fees_df, deposits_df, withdrawals_df, open_df, closed_df]
     """
 
     # drop NWA clumn: don't what it means :)
@@ -130,7 +164,7 @@ def pre_process_account_activity_df(
 
     closed_df = df[df.type == "Profit/Loss of Trade"]
     closed_df = closed_df.drop(columns=["type"], errors="ignore")
-    return fees_df, deposits_df, open_df, closed_df
+    return fees_df, deposits_df, withdrawals_df, open_df, closed_df
 
 
 def pre_process_closed_positions_df(df: pd.DataFrame) -> pd.DataFrame:

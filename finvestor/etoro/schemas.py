@@ -1,6 +1,9 @@
 from datetime import datetime
 
+import pandas as pd
 from pydantic import BaseModel, Field, validator
+
+from finvestor.etoro.utils import parse_etoro_datetime
 
 
 class EtoroAccountSummary(BaseModel):
@@ -13,7 +16,7 @@ class EtoroAccountSummary(BaseModel):
 
     @validator("created_at", "start_date", "end_date", pre=True)
     def parse_dates(cls, value):
-        return datetime.strptime(value, "%d/%m/%Y %H:%M:%S")
+        return parse_etoro_datetime(value)
 
     initial_realised_equity: float = Field(..., alias="Beginning Realized Equity")
     initial_unrealised_equity: float = Field(..., alias="Beginning Unrealized Equity")
@@ -45,3 +48,15 @@ class EtoroFinancialSummary(BaseModel):
     crypto_commissions: float = Field(..., alias="Commissions (spread) on Crypto")
     etf_commissions: float = Field(..., alias="Commissions (spread) on ETFs")
     fees: float = Field(..., alias="Fees")
+
+
+class EtoroAccountStatement(BaseModel):
+    account_summary: EtoroAccountSummary
+    financial_summary: EtoroFinancialSummary
+    transactions: pd.DataFrame
+    fees: pd.DataFrame
+    deposits: pd.DataFrame
+    withdrawals: pd.DataFrame
+
+    class Config:
+        arbitrary_types_allowed = True
