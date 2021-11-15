@@ -31,6 +31,7 @@ uvicorn = {extras = ["standard"], version = "^0.15.0", optional = true}
 python-jose = {extras = ["cryptography"], version = "^3.3.0", optional = true}
 jupyter = {version = "^1.0.0", optional = true}
 jupyter-contrib-nbextensions = {version = "^0.5.1", optional = true}
+SQLAlchemy = {extras = ["mypy"], version = "^1.4.27"}
 
 [tool.poetry.dev-dependencies]
 black = {version = "^21.9b0", allow-prereleases = true}
@@ -44,6 +45,7 @@ pandas-stubs = "^1.2.0"
 pre-commit = "^2.15.0"
 types-pytz = "^2021.3.0"
 respx = "^0.18.2"
+types-attrs = "^19.1.0"
 
 [tool.poetry.extras]
 jupyter = ["jupyter", "jupyter-contrib-nbextensions"]
@@ -55,7 +57,7 @@ build-backend = "poetry.core.masonry.api"
 
 [mypy]
 python_version = 3.8
-plugins = "pydantic.mypy"
+plugins = "pydantic.mypy,sqlalchemy.ext.mypy.plugin"
 
 [tool.black]
 exclude = '''

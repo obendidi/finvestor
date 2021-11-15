@@ -28,6 +28,12 @@ def yf_scrape_response(data_dir) -> str:
         return file.read()
 
 
+@pytest.fixture(scope="session")
+def isin_scrape_response(data_dir) -> str:
+    with open(os.path.join(data_dir, "ISIN_scrape_response.txt"), "r") as file:
+        return file.read()
+
+
 @pytest.fixture(autouse=True)
 def env_setup(monkeypatch, request):
     if "disable_auto_env_setup" in request.keywords:

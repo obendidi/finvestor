@@ -1,6 +1,6 @@
 from pydantic import AnyHttpUrl, BaseSettings
 
-USER_AGENT_HEADERS = {
+YF_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36"  # noqa
 }
 
@@ -17,6 +17,14 @@ class YFSettings(BaseSettings):
         scheme="https",
         host="finance.yahoo.com/quote",
     )
+    ISIN_SCRAPE_URL: AnyHttpUrl = AnyHttpUrl(
+        url="https://markets.businessinsider.com/ajax/SearchController_Suggest",
+        scheme="https",
+        host="markets.businessinsider.com",
+        path="/ajax/SearchController_Suggest",
+    )
+    ISIN_SCRAPE_MAX_RESULTS: int = 25
+    ISIN_SCRAPE_TIMEOUT: int = 5
 
     class Config:
         case_sensitive = True

@@ -11,6 +11,7 @@ class Asset(BaseModel):
     exchange: str
     exchange_timezone: str
     market: str
+    isin: Optional[str]
     country: Optional[str]
     sector: Optional[str]
     industry: Optional[str]
