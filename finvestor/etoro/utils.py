@@ -1,14 +1,19 @@
+import asyncio
 import logging
 from datetime import datetime
+from typing import Optional
 
+import numpy as np
 import pandas as pd
 import pytz
+from httpx import AsyncClient
+from tqdm import tqdm
 
-from finvestor.alpaca import AlpacaClient
-
-ETORO_DATETIME_FORMAT = "%d/%m/%Y %H:%M:%S"
+from finvestor.data import get_asset, get_closest_price_at_timestamp
 
 logger = logging.getLogger(__name__)
+
+ETORO_DATETIME_FORMAT = "%d/%m/%Y %H:%M:%S"
 
 
 def parse_etoro_datetime(etoro_datetime: str) -> datetime:
@@ -24,34 +29,40 @@ def parse_etoro_datetime(etoro_datetime: str) -> datetime:
     return pytz.utc.localize(date)
 
 
-def fill_missing_company_name(df: pd.DataFrame, client: AlpacaClient) -> pd.DataFrame:
-    if not df["name"].isnull().values.any():
-        return df
-    valid_idx = df["name"].first_valid_index()
-    if valid_idx is None:
-        ticker = df["ticker"].iloc[0]
-        try:
-            name = client.get_asset(ticker).name
-        except Exception as error:
-            logger.error(error)
-            return df
+async def fill_nan_ticker(
+    df: pd.DataFrame, ticker: str, *, client: AsyncClient, pbar: Optional[tqdm] = None
+) -> None:
+    if pbar is not None:
+        pbar.set_description(f"Filling missing data: {ticker}")
+    # get valid name index if exists
+    valid_name_idx = df.loc[df.ticker == ticker, "name"].first_valid_index()
+    # if a name already exists
+    if valid_name_idx is not None:
+        name, isin = df.loc[valid_name_idx, ["name", "ISIN"]]
     else:
-        name = df["name"].loc[valid_idx]
-    df["name"] = df["name"].fillna(value=name)
-    return df
+        asset = await get_asset(ticker, client=client)
+        name = asset.name
+        isin = asset.isin or np.nan
 
+    df.loc[df.ticker == ticker, ["name", "ISIN"]] = name, isin
 
-if __name__ == "__main__":
-    from finvestor.etoro.parsers import parse_etoro_account_statement
-
-    filepath = "data/etoro-account-statement-12-1-2019-10-24-2021.xlsx"
-    client = AlpacaClient()
-
-    sheets = pd.read_excel(filepath, sheet_name=None)
-    statement = parse_etoro_account_statement(sheets)
-    df = statement.transactions[["ticker", "name"]]
-
-    df = statement.transactions.groupby(["ticker"]).apply(
-        lambda grp: fill_missing_company_name(grp, client)
-    )
-    print(df[["ticker", "name", "ISIN"]].tail(30))
+    # get open_rate for non closed positions
+    if df.loc[df.ticker == ticker, "open_rate"].isnull().values.any():
+        _df_to_fill = df.loc[
+            (df.ticker == ticker) & (df.open_rate.isna()), ["open_date", "invested"]
+        ]
+        open_rates = await asyncio.gather(
+            *[
+                get_closest_price_at_timestamp(
+                    ticker, client=client, timestamp=open_date
+                )
+                for open_date in _df_to_fill.open_date
+            ]
+        )
+        units = _df_to_fill.invested / open_rates
+        _fill_data = [(open_rate, unit) for open_rate, unit in zip(open_rates, units)]
+        df.loc[
+            (df.ticker == ticker) & (df.open_rate.isna()), ["open_rate", "units"]
+        ] = _fill_data
+    if pbar is not None:
+        pbar.update(1)

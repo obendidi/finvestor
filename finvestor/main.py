@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+
 from finvestor.db.session import database
 
 app = FastAPI(

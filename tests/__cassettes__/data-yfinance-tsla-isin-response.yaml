@@ -1,0 +1,87 @@
+interactions:
+- request:
+    body: ''
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      host:
+      - markets.businessinsider.com
+      user-agent:
+      - python-httpx/0.20.0
+    method: GET
+    uri: https://markets.businessinsider.com/ajax/SearchController_Suggest?max_results=25&query=TSLA
+  response:
+    content: mmSuggestDeliver(0, new Array("Name", "Category", "Keywords", "Bias",
+      "Extension", "IDs"), new Array(new Array("Tesla", "Stocks", "TSLA|US88160R1014|TSLA||TSLA",
+      "75", "", "tsla|TSLA|1|48088"),new Array("Teladoc Inc", "Stocks", "TDOC|US87918A1051|TDOC||",
+      "75", "", "tdoc|TDOC|1|7166580"),new Array("Eimpskipafelag Islands", "Stocks",
+      "|IS0000019800|||", "75", "", "eimpskipafelag_islands||1|218723"),new Array("Talanx
+      AG", "Stocks", "TNXXF|DE000TLX1005|TNXXF||TLXGn", "75", "", "tnxxf|TNXXF|1|192984"),new
+      Array("Vatryggingafelag Islands hf", "Stocks", "|IS0000007078|||", "75", "",
+      "vatryggingafelag_islands_hf||1|1331993"),new Array("Tree Island Steel Ltd",
+      "Stocks", "TWIRF|CA89467Q2009|TWIRF||", "75", "", "twirf|TWIRF|1|3782230"),new
+      Array("King Island Scheelite LtdShs", "Stocks", "KISLF|AU000000KIS7|KISLF||",
+      "75", "", "kislf|KISLF|1|20598"),new Array("Arab Islamic Bank", "Stocks", "|PS1003112957|||",
+      "75", "", "arab_islamic_bank||1|1321271"),new Array("Tesla Exploration Ltd",
+      "Stocks", "TXLZF|CA8816011081|TXLZF||", "75", "", "txlzf|TXLZF|1|47370"),new
+      Array("Island, RepublikIK-Bonds 2011(22)", "Bonds", "A1G4VH|IS0000020717", "75",
+      "", "7_250-island-republik-Bond-2022-is0000020717|IS0000020717|Island, Republik|Island,
+      RepublikIK-Bonds 2011(22)|1378238"),new Array("Teladoc Health Inc.", "Bonds",
+      "A193GB|US87918AAB17", "75", "", "teladoc_health_inc-Bond-2022-us87918aab17|US87918AAB17|Teladoc
+      Health Inc.|Teladoc Health Inc.|52610876"),new Array("Talanx AGNotes v.2014(2026)",
+      "Bonds", "TLX210|DE000TLX2102", "75", "", "talanxnotes_v20142026-Bond-2026-de000tlx2102|DE000TLX2102|Talanx
+      AG|Talanx AGNotes v.2014(2026)|4146042"),new Array("Island, RepublikIK-Notes
+      2009(25)", "Bonds", "A1ASTQ|IS0000019321", "75", "", "8_000-island-republik-Bond-2025-is0000019321|IS0000019321|Island,
+      Republik|Island, RepublikIK-Notes 2009(25)|1367191"),new Array("Yen - Cayman
+      Islands Dollar", "Currencies", "", "95", "", "jpy-kyd|55801"),new Array("Schweizer
+      Franken - Cayman Islands Dollar", "Currencies", "", "95", "", "chf-kyd|55848"),new
+      Array("Pfund Sterling - Cayman Islands Dollar", "Currencies", "", "95", "",
+      "gbp-kyd|55702"),new Array("Water Island Diversifed Event-Driven Fund;R", "Funds",
+      "AEDFX|US03875R3049", "70", "", "6633|AEDFX|Water Island Capital LLC|Alternatives|water-island-diversifed-event-driven-fund;r"),new
+      Array("Water Island Long/Short Fund;A", "Funds", "ATQAX|US03875R8170", "70",
+      "", "6704|ATQAX|Water Island Capital LLC|Alternatives|water-island-long-short-fund;a"),new
+      Array("Water Island Credit Opportunities Fund;I", "Funds", "ACFIX|US03875R8097",
+      "70", "", "6675|ACFIX|Water Island Capital LLC|Alternatives|water-island-credit-opportunities-fund;i"),new
+      Array("Water Island Long/Short Fund;R", "Funds", "ATQFX|US03875R8410", "70",
+      "", "6709|ATQFX|Water Island Capital LLC|Alternatives|water-island-long-short-fund;r"),new
+      Array("uslabel.net", "Private Companies", "", "75", "", "uslabel-net|373934"),new
+      Array("Talaris", "Private Companies", "", "75", "", "talaris|170190"),new Array("Telarus",
+      "Private Companies", "", "75", "", "telarus|75302"),new Array("Telavox", "Private
+      Companies", "", "75", "", "telavox-3395|168740")), 24, 0);
+    headers:
+      Cache-Control:
+      - max-age=0, no-cache, no-store
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Length:
+      - '1119'
+      Content-Type:
+      - text/html; charset=utf-8
+      Date:
+      - Fri, 19 Nov 2021 21:27:02 GMT
+      Expires:
+      - Fri, 19 Nov 2021 21:27:02 GMT
+      Feature-Policy:
+      - geolocation 'none'; midi 'none'; camera 'none'; usb 'none'; magnetometer 'none';
+        accelerometer 'none'; gyroscope 'none'; microphone 'none'; payment 'none'
+      Pragma:
+      - no-cache
+      Referrer-Policy:
+      - strict-origin-when-cross-origin
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains
+      Vary:
+      - Accept-Encoding
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+    http_version: HTTP/1.1
+    status_code: 200
+version: 1

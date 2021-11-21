@@ -135,4 +135,6 @@ dmypy.json
 .pyre/
 
 data/
+!finvestor/data
+!tests/data
 notebooks

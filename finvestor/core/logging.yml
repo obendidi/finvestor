@@ -1,0 +1,43 @@
+# Default Configuration
+version: 1
+
+# Disable previously created loggers and update the root logger at the instant
+# the configuration file is fed.
+disable_existing_loggers: true
+
+# Logging formatter definition
+# For more details on format types,
+# visit - 'https://docs.python.org/3/library/logging.html#logrecord-attributes
+formatters:
+  colored:
+    class: coloredlogs.ColoredFormatter
+    datefmt: "%Y-%m-%dT%H:%M:%S%z"
+    format: "%(asctime)s %(name)s %(levelname)s %(message)s"
+
+# Logging handlers
+# For a list of pre-defined handlers, visit -
+# 'https://docs.python.org/3/library/logging.handlers.html#module-logging.handlers'
+handlers:
+  console:
+    class: logging.StreamHandler
+    formatter: colored
+    stream: ext://sys.stdout
+
+# Root Logger Configuration
+root:
+  # Logger Level -
+  # Set to NOTSET if you have child loggers with pre-defined levels
+  level: NOTSET
+  handlers: [console]
+  # Stop propogation from child to parent in Logging hierarchy
+  propogate: no
+
+loggers:
+  finvestor:
+    level: DEBUG
+  httpx:
+    level: INFO
+  uvicorn:
+    level: INFO
+  sqlalchemy.engine:
+    level: INFO

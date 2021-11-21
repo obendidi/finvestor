@@ -8,6 +8,7 @@ from finvestor.etoro.schemas import (
     EtoroFinancialSummary,
 )
 from finvestor.etoro.utils import ETORO_DATETIME_FORMAT
+from finvestor.etoro.yf_mapping import ETORO_TO_YF_TICKER_MAPPING
 
 
 def parse_etoro_account_statement(
@@ -65,6 +66,10 @@ def parse_etoro_account_statement(
     )
     transaction["close_date"] = pd.to_datetime(
         transaction["close_date"], format=ETORO_DATETIME_FORMAT, utc=True
+    )
+
+    transaction["ticker"] = transaction["ticker"].replace(
+        to_replace=ETORO_TO_YF_TICKER_MAPPING
     )
 
     return EtoroAccountStatement(

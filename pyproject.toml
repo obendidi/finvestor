@@ -22,8 +22,10 @@ attrs = "^21.2.0"
 alpaca-trade-api = "^1.4.1"
 httpx = "^0.20.0"
 lxml = "^4.6.4"
-trio = "^0.19.0"
 python-dotenv = "^0.19.2"
+anyio = "^3.3.4"
+tqdm = "^4.62.3"
+coloredlogs = "^15.0.1"
 
 fastapi = {version = "^0.70.0", optional = true}
 databases = {extras = ["sqlite"], version = "^0.5.3", optional = true}
@@ -46,6 +48,9 @@ pre-commit = "^2.15.0"
 types-pytz = "^2021.3.0"
 respx = "^0.18.2"
 types-attrs = "^19.1.0"
+types-PyYAML = "^6.0.1"
+pytest-recording = "^0.12.0"
+
 
 [tool.poetry.extras]
 jupyter = ["jupyter", "jupyter-contrib-nbextensions"]
@@ -58,6 +63,7 @@ build-backend = "poetry.core.masonry.api"
 [mypy]
 python_version = 3.8
 plugins = "pydantic.mypy,sqlalchemy.ext.mypy.plugin"
+exclude = "tests/"
 
 [tool.black]
 exclude = '''
@@ -81,8 +87,7 @@ known_first_party = ["finvestor"]
 [tool.pytest.ini_options]
 addopts = "-ra -q -vv --cov=finvestor --cov-report=term --cov-report=xml"
 markers = [
-    "integration: marks tests as integration tests (deselect with '-m \"not integration\"')",
-    "disable_auto_env_setup: marker to disable auto env setup, used internally in the tests."
+    "integration: marks tests as integration tests (deselect with '-m \"not integration\"')"
 ]
 
 [tool.coverage.run]

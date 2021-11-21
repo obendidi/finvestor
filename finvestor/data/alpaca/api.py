@@ -14,9 +14,7 @@ class AlpacaClient:
     def __getattr__(self, *args):
         return self._client.__getattribute__(*args)
 
-    def get_ticker_price(
-        self, ticker: str, date_time: Optional[datetime] = None
-    ) -> float:
+    def get_ticker_price(self, ticker: str, date_time: Optional[datetime] = None):
         """Get a ticker price either at a specific datetime or latest.
 
         The maximum granularity that we can get at the free tier is 1 minute bars,
@@ -31,7 +29,7 @@ class AlpacaClient:
 
         if date_time is None:
             bar = self._client.get_latest_bar(ticker)
-            return bar.c
+            return bar
         start_date = date_time.replace(second=0)
         end_date = (date_time + timedelta(minutes=1)).replace(second=0)
         bars = self._client.get_bars(
@@ -40,7 +38,4 @@ class AlpacaClient:
             start=start_date.isoformat(),
             end=end_date.isoformat(),
         )
-        if date_time.second <= 30:
-            return bars[0].c
-        else:
-            return bars[-1].o
+        return bars

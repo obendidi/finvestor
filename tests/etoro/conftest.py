@@ -1,21 +1,8 @@
 import os
-from typing import Dict, Union
+from typing import Dict
 
 import pandas as pd
 import pytest
-from syrupy.extensions.amber import AmberSnapshotExtension
-
-
-class EtoroParsersSnapshotExt(AmberSnapshotExtension):
-    def get_snapshot_name(self, *, index: Union[str, int] = 0) -> str:
-        """Get the snapshot name for the assertion index in a test location"""
-        assert isinstance(index, str)
-        return index
-
-
-@pytest.fixture
-def etoro_parsers_snapshot(snapshot):
-    return snapshot.use_extension(EtoroParsersSnapshotExt)
 
 
 @pytest.fixture(scope="session")
