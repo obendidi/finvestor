@@ -1,6 +1,10 @@
+import logging
+from datetime import timedelta
 from typing import Literal, Optional
 
 from pydantic import AnyHttpUrl, AnyUrl, BaseSettings, validator
+
+logger = logging.getLogger(__name__)
 
 
 class FinvestorConfig(BaseSettings):
@@ -10,8 +14,6 @@ class FinvestorConfig(BaseSettings):
     ###############################################
     #     EXTARNAL DATA PROVIDERS SETTINGS        #
     ###############################################
-
-    DATA_PROVIDER: Literal["alpaca", "yfinance"] = "yfinance"
 
     # YAHOO FINANCE BASE URL TO GET PRICE DATA
     YF_BASE_URL: AnyHttpUrl = AnyHttpUrl(
@@ -44,17 +46,29 @@ class FinvestorConfig(BaseSettings):
         scheme="https",
         host="data.alpaca.markets",
     )
-    APCA_API_KEY_ID: Optional[str]
-    APCA_API_SECRET_KEY: Optional[str]
+    # by defult free tier has 15 minue delay
+    APCA_HISTORICAL_DATA_DELAY_SECONDS: timedelta = timedelta(seconds=15 * 60)
+    APCA_API_KEY_ID: Optional[str] = None
+    APCA_API_SECRET_KEY: Optional[str] = None
 
-    @validator("DATA_PROVIDER")
-    def api_ids_must_be_provided(cls, data_provider, values):
-        if data_provider == "alpaca" and (
-            not values.get("APCA_API_KEY_ID") or not values.get("APCA_API_SECRET_KEY")
-        ):
+    DATA_PROVIDER: Literal[None, "alpaca", "yahoo_finance"] = None
+
+    @validator("DATA_PROVIDER", pre=True)
+    def data_provider_setter(cls, data_provider, values):
+        key_id = values.get("APCA_API_KEY_ID")
+        secret_id = values.get("APCA_API_SECRET_KEY")
+        if data_provider is None:
+            if key_id is not None and secret_id is not None:
+                _provider = "alpaca"
+            else:
+                _provider = "yahoo_finance"
+            logger.debug(f"Using '{_provider}' as market data provider.")
+            return _provider
+
+        if data_provider == "alpaca" and (key_id is None or secret_id is None):
             raise ValueError(
-                "To use alpaca data provider, you must set up the env vars: "
-                "'APCA_API_KEY_ID' and 'APCA_API_SECRET_KEY'"
+                "To use 'alpaca' as market data provider, you need to set up: "
+                "'APCA_API_KEY_ID' and 'APCA_API_KEY_ID'"
             )
         return data_provider
 
