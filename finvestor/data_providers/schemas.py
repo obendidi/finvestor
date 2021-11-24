@@ -1,11 +1,25 @@
 from collections.abc import Sequence
 from datetime import datetime
-from typing import List, Literal
+from typing import List, Optional
 
 import pandas as pd
 from pydantic import BaseModel, Field
 
-ValidInterval = Literal["1m", "2m", "5m", "15m", "30m", "1h", "1d", "5d", "1mo", "3mo"]
+from finvestor.data_providers.utils import ValidInterval
+
+
+class Asset(BaseModel):
+    ticker: str
+    name: str
+    type: str
+    currency: str
+    exchange: str
+    exchange_timezone: str
+    market: str
+    isin: Optional[str]
+    country: Optional[str]
+    sector: Optional[str]
+    industry: Optional[str]
 
 
 class Bar(BaseModel):
@@ -35,24 +49,3 @@ class Bars(BaseModel, Sequence):
             subset=["close", "open", "high", "low", "volume"], how="all"
         )
         return bars_df
-
-
-if __name__ == "__main__":
-    bar1 = Bar(
-        timestamp=datetime(2001, 12, 14),
-        close=0.0,
-        high=15,
-        low=4,
-        open=52,
-        volume=44557,
-    )
-    bar2 = Bar(
-        timestamp=datetime(2012, 12, 14),
-        close=33.25,
-        high=999,
-        low=589,
-        open=636,
-        volume=1,
-    )
-    bars = Bars(__root__=[bar1, bar2])
-    print(bars[-1])

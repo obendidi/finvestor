@@ -4,9 +4,8 @@ from typing import Any, Dict, Optional
 
 from httpx import AsyncClient
 
-from finvestor.core import config
-from finvestor.data.yfinance import YF_HEADERS
-from finvestor.models import Asset
+from finvestor.core import YAHOO_FINANCE_HEADERS, config
+from finvestor.data_providers.schemas import Asset
 
 
 async def get_quote_summary(ticker: str, *, client: AsyncClient) -> Dict[str, Any]:
@@ -27,7 +26,9 @@ async def get_quote_summary(ticker: str, *, client: AsyncClient) -> Dict[str, An
     Returns:
         Dict[str, Any]
     """
-    resp = await client.get(f"{config.YF_SCRAPE_URL}/{ticker}", headers=YF_HEADERS)
+    resp = await client.get(
+        f"{config.YF_SCRAPE_URL}/{ticker}", headers=YAHOO_FINANCE_HEADERS
+    )
 
     resp.raise_for_status()
 
