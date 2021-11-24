@@ -7,7 +7,7 @@ import attr
 import pandas as pd
 from anyio import open_file
 from httpx import AsyncClient
-from tqdm import tqdm
+from rich.progress import track
 
 from finvestor.etoro.parsers import parse_etoro_account_statement
 from finvestor.etoro.schemas import EtoroAccountStatement
@@ -56,23 +56,25 @@ class EtoroPortfolio:
         return self.transactions.iloc[-1]["balance_open"]
 
     @property
-    def tickers(self) -> List[str]:
-        return list(self.transactions["ticker"].unique())
-
-    @property
     def open_positions(self) -> pd.DataFrame:
         return self.transactions.loc[self.transactions.close_rate.isna()]
 
+    @property
+    def tickers(self) -> List[str]:
+        return list(self.open_positions["ticker"].unique())
+
     async def fill_missing(self) -> None:
-        pbar = tqdm(desc="Filling missing data", unit="ticker", total=len(self.tickers))
-        await asyncio.gather(
-            *[
-                fill_nan_ticker(
-                    self.transactions, ticker, client=self._client, pbar=pbar
-                )
-                for ticker in self.tickers
-            ]
-        )
+        tasks = [
+            fill_nan_ticker(self.transactions, ticker, client=self._client)
+            for ticker in self.tickers
+        ]
+        for task in track(
+            asyncio.as_completed(tasks),
+            description="[cyan]Filling missing data...",
+            total=len(tasks),
+            transient=True,
+        ):
+            await task
 
     def export_yf(self, export_path: str) -> None:
         df = self.open_positions[["ticker", "open_date", "open_rate", "units"]]
@@ -96,9 +98,6 @@ class EtoroPortfolio:
 
 
 if __name__ == "__main__":
-    from finvestor.core import setup_logging
-
-    setup_logging()
 
     async def main():
         filepath = "data/etoro-account-statement-12-1-2019-10-24-2021.xlsx"

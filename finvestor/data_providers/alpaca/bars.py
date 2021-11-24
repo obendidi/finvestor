@@ -15,6 +15,7 @@ from finvestor.data_providers.utils import (
     ValidPeriod,
     time_period_to_timedelta,
     validate_start_end_period_args,
+    DEFAULT_INTERVAL,
 )
 
 logger = logging.getLogger(__name__)
@@ -22,17 +23,17 @@ logger = logging.getLogger(__name__)
 
 def _interval_to_apca_timeframe(interval: ValidInterval) -> str:
     if interval.endswith("m"):
-        return interval.replace("m", "Min")
+        return str(interval.replace("m", "Min"))
     elif interval.endswith("h"):
-        return interval.replace("h", "Hour")
+        return str(interval.replace("h", "Hour"))
     elif interval.endswith("d"):
-        return interval.replace("d", "Day")
+        return str(interval.replace("d", "Day"))
     elif interval.endswith("mo"):
-        return interval.replace("mo", "Month")
+        return str(interval.replace("mo", "Month"))
     raise ValueError(f"Unsupported interval: {interval}")
 
 
-def is_before_apca_hstorical_delay(end: datetime) -> bool:
+def is_before_apca_historical_delay(end: datetime) -> bool:
     if config.APCA_HISTORICAL_DATA_DELAY_SECONDS.total_seconds() == 0:
         return True
     now = pytz.utc.localize(datetime.utcnow())
@@ -43,6 +44,7 @@ def is_before_apca_hstorical_delay(end: datetime) -> bool:
 
 
 def _validate_apca_start_end_args(
+    ticker: str,
     period: Optional[ValidPeriod] = None,
     start: Optional[datetime] = None,
     end: Optional[datetime] = None,
@@ -56,22 +58,19 @@ def _validate_apca_start_end_args(
         end = pytz.utc.localize(datetime.utcnow())
         if config.APCA_HISTORICAL_DATA_DELAY_SECONDS.total_seconds() > 0:
             logger.debug(
-                f"Applying a delay of "
+                f"ALPACA - '{ticker}' - Appting delay of "
                 f"{config.APCA_HISTORICAL_DATA_DELAY_SECONDS} minutes for alpaca "
                 "historical data."
             )
             end = end - config.APCA_HISTORICAL_DATA_DELAY_SECONDS
         start = end - delta
-    elif (
-        start is not None
-        and end is not None
-        and not is_before_apca_hstorical_delay(end)
-    ):
-        raise ValueError(
-            f"Provided alpaca config limits historical data with a delay of "
-            f"{config.APCA_HISTORICAL_DATA_DELAY_SECONDS}, end date: {end} does not"
-            f"support that delay."
-        )
+    elif start is not None and end is not None:
+        if not is_before_apca_historical_delay(end):
+            raise ValueError(
+                f"Provided alpaca config limits historical data with a delay of "
+                f"{config.APCA_HISTORICAL_DATA_DELAY_SECONDS}, end date: {end} does not"
+                f"support that delay."
+            )
     else:
         raise NotImplementedError()
 
@@ -86,18 +85,26 @@ async def get_alpaca_bars(
     start: Optional[datetime] = None,
     end: Optional[datetime] = None,
     period: Optional[ValidPeriod] = None,
-    interval: ValidInterval = "1m",
-) -> Bars:
-    start, end = _validate_apca_start_end_args(period=period, start=start, end=end)
-    url = urljoin(config.APCA_API_DATA_URL, f"/v2/stocks/{ticker}/bars")
+    interval: ValidInterval = DEFAULT_INTERVAL,
+) -> Optional[Bars]:
+    start, end = _validate_apca_start_end_args(
+        ticker, period=period, start=start, end=end
+    )
+
     params: Dict[str, Any] = {
         "start": start.isoformat(),
         "end": end.isoformat(),
         "timeframe": _interval_to_apca_timeframe(interval),
         "limit": 10000,
-        "adjustment": "all",
     }
-    _bars = []
+    if "-" in ticker:
+        urlpath = f"/v1beta1/crypto/{ticker.replace('-', '')}/bars"
+    else:
+        urlpath = f"/v2/stocks/{ticker}/bars"
+        params["adjustment"] = "all"
+    url = urljoin(config.APCA_API_DATA_URL, urlpath)
+
+    bars = []
     next_page_token = ""
     while next_page_token is not None:
         if next_page_token:
@@ -106,14 +113,19 @@ async def get_alpaca_bars(
             resp = await client.get(url, auth=auth, params=params)
             resp.raise_for_status()
         except HTTPError as error:
-            error_resp = resp.json()
-            logger.error(f"Alpaca responded with an error: {error_resp}")
-            raise HTTPError(error_resp) from error
+            logger.error(f"ALPACA - '{ticker}' - {error}")
+            raise HTTPError(str(error)) from error
         response = resp.json()
+        _bars = response.get("bars")
         next_page_token = response.get("next_page_token")
-        _bars.extend(response.get("bars", []))
-    if not _bars:
-        raise HTTPError(f"Got empty bars from alpaca: {response}")
+        if _bars:
+            bars.extend(_bars)
+    if not bars:
+        logger.debug(
+            f"ALPACA - '{ticker}' - Got empty response, asset not found. "
+            f"(urlpath={urlpath})"
+        )
+        return None
     return Bars(
         __root__=[
             Bar(
@@ -125,7 +137,7 @@ async def get_alpaca_bars(
                 volume=_bar["v"],
                 interval=interval,
             )
-            for _bar in _bars
+            for _bar in bars
         ]
     )
 
@@ -136,7 +148,7 @@ if __name__ == "__main__":
     async def _main():
         async with AsyncClient() as client:
             bars = await get_alpaca_bars(
-                "TSLA", client=client, period="1d", interval="30m"
+                "DOYU", client=client, period="1d", interval="30m"
             )
             print(bars.df())
 

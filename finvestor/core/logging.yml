@@ -5,12 +5,11 @@ version: 1
 # the configuration file is fed.
 disable_existing_loggers: true
 
-# Logging formatter definition
-# For more details on format types,
-# visit - 'https://docs.python.org/3/library/logging.html#logrecord-attributes
+# # Logging formatter definition
+# # For more details on format types,
+# # visit - 'https://docs.python.org/3/library/logging.html#logrecord-attributes
 formatters:
-  colored:
-    class: coloredlogs.ColoredFormatter
+  simple:
     datefmt: "%Y-%m-%dT%H:%M:%S%z"
     format: "%(asctime)s %(name)s %(levelname)s %(message)s"
 
@@ -20,15 +19,22 @@ formatters:
 handlers:
   console:
     class: logging.StreamHandler
-    formatter: colored
+    formatter: simple
     stream: ext://sys.stdout
+  rich:
+    class: rich.logging.RichHandler
+  file:
+    class: logging.FileHandler
+    formatter: simple
+    filename: finvestor.log
+    mode: a
 
 # Root Logger Configuration
 root:
   # Logger Level -
   # Set to NOTSET if you have child loggers with pre-defined levels
   level: NOTSET
-  handlers: [console]
+  handlers: [rich]
   # Stop propogation from child to parent in Logging hierarchy
   propogate: no
 

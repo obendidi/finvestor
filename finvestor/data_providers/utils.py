@@ -1,12 +1,30 @@
 import logging
+from collections import UserString
 from datetime import datetime, timedelta
 from typing import Literal, Optional, Tuple, Union
+from pydantic import validate_arguments
 
 import pytz
 
 logger = logging.getLogger(__name__)
 
-ValidInterval = Literal["1m", "2m", "5m", "15m", "30m", "1h", "1d", "5d", "1mo", "3mo"]
+_ValidInterval = Literal["1m", "2m", "5m", "15m", "30m", "1h", "1d", "5d", "1mo", "3mo"]
+
+
+class DefaultString(UserString):
+    @classmethod
+    def __get_validators__(cls):
+        yield cls.validate
+
+    @classmethod
+    @validate_arguments()
+    def validate(cls, value: _ValidInterval):
+        return value
+
+
+DEFAULT_INTERVAL = DefaultString("1m")
+
+ValidInterval = Union[DefaultString, _ValidInterval]
 ValidPeriod = Literal[
     "1d", "5d", "1mo", "3mo", "6mo", "1y", "2y", "5y", "10y", "ytd", "max"
 ]
@@ -88,7 +106,7 @@ def validate_start_end_period_args(
                     f"Only timezone aware datetimes with tz={pytz.UTC} are supported, "
                     f"got: end<{end.tzinfo}>"
                 )
-            if end <= start:
+            if end < start:
                 raise ValueError(
                     f"Provided end datetime ({end}) should be larger than start "
                     f"datetime ({start})"

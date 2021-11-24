@@ -1,15 +1,13 @@
 import asyncio
 import logging
 from datetime import datetime
-from typing import Optional
 
 import numpy as np
 import pandas as pd
 import pytz
 from httpx import AsyncClient
-from tqdm import tqdm
 
-from finvestor.data import get_asset, get_closest_price_at_timestamp
+from finvestor.data_providers import get_asset, get_price_at_timestamp
 
 logger = logging.getLogger(__name__)
 
@@ -30,10 +28,8 @@ def parse_etoro_datetime(etoro_datetime: str) -> datetime:
 
 
 async def fill_nan_ticker(
-    df: pd.DataFrame, ticker: str, *, client: AsyncClient, pbar: Optional[tqdm] = None
+    df: pd.DataFrame, ticker: str, *, client: AsyncClient
 ) -> None:
-    if pbar is not None:
-        pbar.set_description(f"Filling missing data: {ticker}")
     # get valid name index if exists
     valid_name_idx = df.loc[df.ticker == ticker, "name"].first_valid_index()
     # if a name already exists
@@ -53,9 +49,7 @@ async def fill_nan_ticker(
         ]
         open_rates = await asyncio.gather(
             *[
-                get_closest_price_at_timestamp(
-                    ticker, client=client, timestamp=open_date
-                )
+                get_price_at_timestamp(ticker, client=client, timestamp=open_date)
                 for open_date in _df_to_fill.open_date
             ]
         )
@@ -64,5 +58,3 @@ async def fill_nan_ticker(
         df.loc[
             (df.ticker == ticker) & (df.open_rate.isna()), ["open_rate", "units"]
         ] = _fill_data
-    if pbar is not None:
-        pbar.update(1)
