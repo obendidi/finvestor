@@ -1,14 +1,14 @@
-from collections.abc import Sequence
-from datetime import datetime
-from typing import List, Optional, Dict, Any
 import logging
-import pytz
+from collections.abc import Sequence
+from datetime import datetime, timedelta
+from typing import List, Optional
 
 import pandas as pd
+import pytz
 from pydantic import BaseModel, Field, validator
 
-from finvestor.data_providers.utils import pytz_utc_now
 from finvestor.data_providers.timeframe import TimeFrame
+from finvestor.data_providers.utils import pytz_utc_now
 
 logger = logging.getLogger(__name__)
 
@@ -56,28 +56,43 @@ class Bars(BaseModel, Sequence):
         return bars_df
 
 
-class GetBarsDataParms(BaseModel):
-    interval: TimeFrame = TimeFrame("1m")
+class GetBarsDataParams(BaseModel):
+    interval: TimeFrame = TimeFrame(timedelta(minutes=1))
     start: Optional[datetime] = None
     end: Optional[datetime] = None
     period: Optional[TimeFrame] = None
 
-    @validator("period")
-    def check_period_or_start(
-        cls, period: TimeFrame[str], values: Dict[str, Any]
-    ) -> TimeFrame[str]:
+    @validator("period", always=True)
+    def check_valid_start_or_valid_period_for_interval(
+        cls, period: Optional[TimeFrame], values
+    ) -> Optional[TimeFrame]:
         start = values.get("start")
         end = values.get("end")
+        interval: TimeFrame = values.get("interval")
         if start is None and period is None:
             raise ValueError("Please provide either a period or start[-end] datetimes.")
         if (start is not None or end is not None) and period is not None:
             raise ValueError(
                 "Please provide ONLY one of period or start[-end] datetimes."
             )
+
+        if period is not None and interval >= period:
+            raise ValueError(
+                f"Interval={interval} is larger than provided period={period}"
+            )
+
+        if start is not None and end is not None:
+            diff: TimeFrame[timedelta] = TimeFrame(end - start)
+            if diff < interval:
+                raise ValueError(
+                    f"Interval={interval} is larger than diff between start-end, "
+                    f"diff={diff}"
+                )
+
         return period
 
     @validator("start", "end")
-    def check_tz_is_utc(cls, _dt: datetime) -> datetime:
+    def check_tz_is_utc(cls, _dt: Optional[datetime]) -> Optional[datetime]:
         if _dt is not None:
             if _dt.tzinfo is None or _dt.tzinfo.utcoffset(_dt) is None:
                 raise ValueError(
@@ -90,7 +105,9 @@ class GetBarsDataParms(BaseModel):
         return _dt
 
     @validator("start")
-    def check_start_is_smaller_than_now(cls, start: datetime) -> datetime:
+    def check_start_is_smaller_than_now(
+        cls, start: Optional[datetime]
+    ) -> Optional[datetime]:
         if start is not None:
             now = pytz_utc_now()
             if start >= now:
@@ -101,8 +118,8 @@ class GetBarsDataParms(BaseModel):
 
     @validator("end")
     def check_end_is_larger_than_start(
-        cls, end: datetime, values: Dict[str, Any]
-    ) -> datetime:
+        cls, end: Optional[datetime], values
+    ) -> Optional[datetime]:
         start = values.get("start")
         if end is not None and start is not None:
             if start >= end:

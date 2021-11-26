@@ -1,7 +1,9 @@
 import os
+import random
 from pathlib import Path
 from typing import AsyncGenerator, Union
 
+import numpy as np
 import pytest
 from httpx import AsyncClient
 from syrupy.extensions.amber import AmberSnapshotExtension
@@ -69,3 +71,9 @@ def vcr_config():
 def vcr_cassette_dir(request) -> str:
     tests_dir = os.path.dirname(__file__)
     return os.path.join(tests_dir, "__cassettes__")
+
+
+@pytest.fixture(autouse=True)
+def rng_seed():
+    random.seed(0)
+    np.random.seed(0)
