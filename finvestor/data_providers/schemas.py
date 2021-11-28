@@ -1,16 +1,18 @@
 import logging
 from collections.abc import Sequence
 from datetime import datetime, timedelta
-from typing import List, Optional
+from typing import List, Optional, Union
 
 import pandas as pd
 import pytz
 from pydantic import BaseModel, Field, validator
 
 from finvestor.data_providers.timeframe import TimeFrame
-from finvestor.data_providers.utils import pytz_utc_now
+from finvestor.data_providers.utils import parse_duration
 
 logger = logging.getLogger(__name__)
+
+TimeFrameStrOrTimeDelta = TimeFrame[Union[str, timedelta]]
 
 
 class Asset(BaseModel):
@@ -34,7 +36,7 @@ class Bar(BaseModel):
     low: float
     open: float
     volume: float
-    interval: TimeFrame[str]
+    interval: TimeFrameStrOrTimeDelta
 
 
 class Bars(BaseModel, Sequence):
@@ -56,43 +58,34 @@ class Bars(BaseModel, Sequence):
         return bars_df
 
 
-class GetBarsDataParams(BaseModel):
+class BarsRequestParams(BaseModel):
     interval: TimeFrame = TimeFrame(timedelta(minutes=1))
+    period: Optional[TimeFrameStrOrTimeDelta] = None
     start: Optional[datetime] = None
     end: Optional[datetime] = None
-    period: Optional[TimeFrame] = None
 
-    @validator("period", always=True)
+    @validator("start", always=True)
     def check_valid_start_or_valid_period_for_interval(
-        cls, period: Optional[TimeFrame], values
-    ) -> Optional[TimeFrame]:
-        start = values.get("start")
-        end = values.get("end")
+        cls, start: Optional[datetime], values
+    ) -> Optional[datetime]:
+        period = values.get("period")
         interval: TimeFrame = values.get("interval")
         if start is None and period is None:
             raise ValueError("Please provide either a period or start[-end] datetimes.")
-        if (start is not None or end is not None) and period is not None:
+        if start is not None and period is not None:
             raise ValueError(
                 "Please provide ONLY one of period or start[-end] datetimes."
             )
 
-        if period is not None and interval >= period:
+        if period is not None and interval > period:
             raise ValueError(
                 f"Interval={interval} is larger than provided period={period}"
             )
 
-        if start is not None and end is not None:
-            diff: TimeFrame[timedelta] = TimeFrame(end - start)
-            if diff < interval:
-                raise ValueError(
-                    f"Interval={interval} is larger than diff between start-end, "
-                    f"diff={diff}"
-                )
-
-        return period
+        return start
 
     @validator("start", "end")
-    def check_tz_is_utc(cls, _dt: Optional[datetime]) -> Optional[datetime]:
+    def check_tz_is_utc(cls, _dt: datetime) -> datetime:
         if _dt is not None:
             if _dt.tzinfo is None or _dt.tzinfo.utcoffset(_dt) is None:
                 raise ValueError(
@@ -109,21 +102,36 @@ class GetBarsDataParams(BaseModel):
         cls, start: Optional[datetime]
     ) -> Optional[datetime]:
         if start is not None:
-            now = pytz_utc_now()
+            now = pytz.utc.localize(datetime.utcnow())
             if start >= now:
                 raise ValueError(
                     f"Provided start is invalid: start<{start}> >= now<{now}>."
                 )
         return start
 
-    @validator("end")
+    @validator("end", always=True)
     def check_end_is_larger_than_start(
         cls, end: Optional[datetime], values
     ) -> Optional[datetime]:
+        period = values.get("period")
         start = values.get("start")
+        interval: TimeFrame = values.get("interval")
+        if end is not None and period is not None:
+            raise ValueError(
+                "Please provide ONLY one of period or start[-end] datetimes."
+            )
         if end is not None and start is not None:
             if start >= end:
                 raise ValueError(
                     f"Provided end is invalid: start<{start}> >= end<{end}>."
                 )
+        if start is not None and end is not None:
+            diff: TimeFrame[timedelta] = TimeFrame(end - start)
+            if diff < interval:
+                raise ValueError(
+                    f"Interval={interval} is larger than diff between start-end, "
+                    f"diff={diff}"
+                )
+        if start is not None and end is None:
+            end = start + parse_duration(interval.duration)
         return end

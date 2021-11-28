@@ -1,12 +1,10 @@
+from typing import Any, Generic, TypeVar
+
 import attr
-from pydantic.fields import ModelField
 from pydantic import ValidationError
-
-from typing import Any, TypeVar, Generic
-
+from pydantic.fields import ModelField
 
 from finvestor.data_providers.utils import parse_duration
-
 
 TimeFrameType = TypeVar("TimeFrameType")
 
@@ -14,7 +12,7 @@ TimeFrameType = TypeVar("TimeFrameType")
 @attr.s
 class TimeFrame(Generic[TimeFrameType]):
 
-    timeperiod = attr.ib(eq=parse_duration, order=parse_duration)
+    duration = attr.ib(eq=parse_duration, order=parse_duration)
 
     @classmethod
     def __get_validators__(cls):
@@ -35,7 +33,7 @@ class TimeFrame(Generic[TimeFrameType]):
         if not isinstance(value, cls):
             value = cls(value)
 
-        _, error = sub_field.validate(value.timeperiod, {}, loc="timeperiod")
+        _, error = sub_field.validate(value.duration, {}, loc="duration")
         if error:
             raise ValidationError([error], cls)  # type: ignore
         return value

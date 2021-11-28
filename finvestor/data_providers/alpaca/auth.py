@@ -1,6 +1,6 @@
 from httpx import Request
 
-from finvestor.core import config
+from finvestor import config
 
 
 def auth(request: Request) -> Request:
