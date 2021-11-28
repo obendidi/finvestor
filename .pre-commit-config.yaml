@@ -29,13 +29,13 @@ repos:
     hooks:
       - id: flake8
         exclude: ^tests/
-  - repo: local
-    hooks:
-      - id: mypy
-        name: mypy
-        entry: poetry run mypy
-        language: system
-        pass_filenames: false
-        args: [-p, finvestor]
-        types: [python]
-        exclude: ^tests/
+  # - repo: local
+  #   hooks:
+  #     - id: mypy
+  #       name: mypy
+  #       entry: poetry run mypy
+  #       language: system
+  #       pass_filenames: false
+  #       args: [-p, finvestor]
+  #       types: [python]
+  #       exclude: ^tests/
