@@ -1,4 +1,4 @@
-from finvestor.core.settings import config
-from finvestor.core.utils import YAHOO_FINANCE_HEADERS, setup_logging
+from finvestor.core.logging import setup_logging
+from finvestor.core.settings import FinvestorConfig
 
-__all__ = ("config", "setup_logging", "YAHOO_FINANCE_HEADERS")
+__all__ = ("FinvestorConfig", "setup_logging")

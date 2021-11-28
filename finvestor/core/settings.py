@@ -47,13 +47,13 @@ class FinvestorConfig(BaseSettings):
         host="data.alpaca.markets",
     )
     # by defult free tier has 15 minue delay
-    APCA_HISTORICAL_DATA_DELAY_SECONDS: timedelta = timedelta(seconds=15 * 60)
+    APCA_HISTORICAL_DATA_DELAY: timedelta = timedelta(minutes=15)
     APCA_API_KEY_ID: Optional[str] = None
     APCA_API_SECRET_KEY: Optional[str] = None
 
     DATA_PROVIDER: Literal[None, "alpaca", "yahoo_finance"] = None
 
-    @validator("DATA_PROVIDER", pre=True)
+    @validator("DATA_PROVIDER", pre=True, always=True)
     def data_provider_setter(cls, data_provider, values):
         key_id = values.get("APCA_API_KEY_ID")
         secret_id = values.get("APCA_API_SECRET_KEY")
@@ -62,7 +62,7 @@ class FinvestorConfig(BaseSettings):
                 _provider = "alpaca"
             else:
                 _provider = "yahoo_finance"
-            logger.debug(f"Using '{_provider}' as market data provider.")
+            logger.debug(f"Using '{_provider.upper()}' as market data provider.")
             return _provider
 
         if data_provider == "alpaca" and (key_id is None or secret_id is None):
@@ -76,6 +76,3 @@ class FinvestorConfig(BaseSettings):
         case_sensitive = True
         env_file = ".env"
         env_file_encoding = "utf-8"
-
-
-config = FinvestorConfig()
