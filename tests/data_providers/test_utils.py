@@ -1,12 +1,13 @@
 from datetime import timedelta
-from pydantic.errors import DurationError
 
 import pytest
+from pydantic.errors import DurationError
 
 from finvestor.data_providers.utils import (
-    parse_duration,
     _NUM_DAYS_IN_A_MONTH,
     _NUM_DAYS_IN_A_YEAR,
+    get_closest_value_to_timedelta,
+    parse_duration,
 )
 
 
@@ -29,6 +30,12 @@ from finvestor.data_providers.utils import (
             timedelta(days=_NUM_DAYS_IN_A_MONTH + 21 + 5, minutes=23),
         ),
         ("1y 3.5mo", timedelta(days=_NUM_DAYS_IN_A_YEAR + _NUM_DAYS_IN_A_MONTH * 3.5)),
+        # ALPCA timeframes
+        ("1Min", timedelta(minutes=1)),
+        ("15Min", timedelta(minutes=15)),
+        ("1Hour", timedelta(hours=1)),
+        ("3Hour", timedelta(hours=3)),
+        ("1Day", timedelta(days=1)),
     ],
 )
 def test_parse_duration(value, expected):
@@ -43,6 +50,29 @@ def test_parse_duration_error_only_chars():
 def test_parse_duration_error_invalid_unit():
     with pytest.raises(DurationError):
         parse_duration("157q")
+
+
+@pytest.mark.parametrize(
+    "key,expected",
+    [
+        (timedelta(minutes=1), "1Minutes"),
+        (timedelta(minutes=1, seconds=20), "1Minutes"),
+        (timedelta(minutes=1, seconds=50), "2m"),
+        (timedelta(days=1, seconds=50), "2h"),
+        (timedelta(days=4), "5d"),
+    ],
+)
+def test_get_closest_value_to_timedelta(key, expected):
+    data = {
+        timedelta(minutes=1): "1Minutes",
+        timedelta(minutes=2): "2m",
+        timedelta(minutes=5): "5Minutes",
+        timedelta(minutes=30): "30Min",
+        timedelta(hours=2): "2h",
+        timedelta(days=5): "5d",
+    }
+
+    assert get_closest_value_to_timedelta(data, key) == expected
 
 
 # @pytest.mark.parametrize(

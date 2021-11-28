@@ -1,8 +1,10 @@
 from datetime import timedelta
 from typing import Literal
-from finvestor.data_providers.timeframe import TimeFrame
-from pydantic import BaseModel, ValidationError
+
 import pytest
+from pydantic import BaseModel, ValidationError
+
+from finvestor.data_providers.timeframe import TimeFrame
 
 
 def test_timeframe_without_subtype():
@@ -10,7 +12,7 @@ def test_timeframe_without_subtype():
         timeframe: TimeFrame
 
     model = Model(timeframe=TimeFrame("1m"))
-    assert model.timeframe.timeperiod == "1m"
+    assert model.timeframe.duration == "1m"
 
 
 def test_str_timeframe_without_subtype():
@@ -59,7 +61,7 @@ def test_timeframe_with_subtypes_and_timeframe_value():
         timeframe: TimeFrame[Literal["1m", "2m"]]
 
     model = Model(timeframe=TimeFrame("1m"))
-    assert model.timeframe.timeperiod == "1m"
+    assert model.timeframe.duration == "1m"
 
 
 def test_timeframe_equal_ops():

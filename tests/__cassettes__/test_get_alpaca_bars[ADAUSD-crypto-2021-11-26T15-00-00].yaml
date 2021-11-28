@@ -1,0 +1,38 @@
+interactions:
+- request:
+    body: ''
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      host:
+      - data.alpaca.markets
+      user-agent:
+      - python-httpx/0.20.0
+    method: GET
+    uri: https://data.alpaca.markets/v1beta1/crypto/ADAUSD/bars?start=2021-11-26T15%3A00%3A00%2B00%3A00&end=2021-11-26T15%3A05%3A00%2B00%3A00&limit=10000&timeframe=1Min
+  response:
+    content: '{"bars":null,"symbol":"ADAUSD","next_page_token":null}'
+    headers:
+      Access-Control-Allow-Credentials:
+      - 'true'
+      Access-Control-Allow-Origin:
+      - '*'
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '54'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Sun, 28 Nov 2021 16:27:21 GMT
+      Strict-Transport-Security:
+      - max-age=15724800; includeSubDomains
+      Vary:
+      - Origin
+    http_version: HTTP/1.1
+    status_code: 200
+version: 1
