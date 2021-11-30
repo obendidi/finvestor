@@ -1,117 +1,123 @@
-from datetime import datetime
-from typing import Optional
 import logging
+import typing as tp
+from datetime import datetime
 
-import pytz
 from httpx import AsyncClient
+from pydantic import validate_arguments
 
-from finvestor.core import config
-from finvestor.data_providers.alpaca.bars import (
-    get_alpaca_bars,
-    is_before_apca_historical_delay,
-)
-from finvestor.data_providers.schemas import Bar, Bars
-from finvestor.data_providers.utils import (
-    DEFAULT_INTERVAL,
+from finvestor import config
+from finvestor.data_providers.schemas import (
+    AutoValidInterval,
+    Bar,
+    Bars,
     ValidInterval,
     ValidPeriod,
-    get_valid_period_for_interval,
-    time_period_to_timedelta,
+)
+from finvestor.data_providers.utils import (
+    get_closest_price_to_timestamp_from_bar,
+    get_smallest_valid_period_for_interval,
 )
 from finvestor.data_providers.yahoo_finance.bars import get_yahoo_finance_bars
 
 logger = logging.getLogger(__name__)
 
 
+@validate_arguments(config=dict(arbitrary_types_allowed=True))
 async def get_bars(
-    ticker: str,
+    tickers: tp.Union[str, tp.List[str]],
     *,
     client: AsyncClient,
-    start: Optional[datetime] = None,
-    end: Optional[datetime] = None,
-    period: Optional[ValidPeriod] = None,
-    interval: ValidInterval = DEFAULT_INTERVAL,
-) -> Bars:
-    if config.DATA_PROVIDER == "alpaca":
-        if end is not None and is_before_apca_historical_delay(end):
-            bars = await get_alpaca_bars(
-                ticker,
-                client=client,
-                start=start,
-                end=end,
-                period=period,
-                interval=interval,
-            )
-            if bars is not None:
-                return bars
-            else:
-                logger.debug(f"ALPACA - '{ticker}' - Falling back to YAHOO-FINANCE ...")
-            # else we fall back to yahoo finance
-        else:
-            logger.debug(
-                f"ALPACA - '{ticker}' - Provided end time '{end}' does not "
-                "validate configured alpaca historical data delay "
-                f"of {config.APCA_HISTORICAL_DATA_DELAY_SECONDS}."
-            )
+    interval: AutoValidInterval = "auto",
+    period: tp.Optional[ValidPeriod] = None,
+    start: tp.Optional[datetime] = None,
+    end: tp.Optional[datetime] = None,
+    end_default: tp.Literal["now", "interval"] = "now",
+) -> tp.Union[Bars, tp.Dict[str, Bars]]:
+
+    if config.MARKET_DATA_PROVIDER == "alpaca":
+        raise NotImplementedError()
+
     return await get_yahoo_finance_bars(
-        ticker,
+        tickers,
         client=client,
+        interval=interval,
+        period=period,
         start=start,
         end=end,
-        period=period,
-        interval=interval,
+        end_default=end_default,
+        include_prepost=True,
+        events="div,splits",
     )
 
 
 async def get_latest_bar(
-    ticker: str,
+    tickers: tp.Union[str, tp.List[str]],
     *,
     client: AsyncClient,
-    interval: ValidInterval = DEFAULT_INTERVAL,
-) -> Bar:
-    bars = await get_bars(
-        ticker,
+    interval: ValidInterval = "1m",
+) -> tp.Union[Bar, tp.Dict[str, Bar]]:
+
+    allbars = await get_bars(
+        tickers,
         client=client,
         interval=interval,
-        period=get_valid_period_for_interval(interval),
+        period=get_smallest_valid_period_for_interval(interval),
     )
-    return bars[-1]
+    if isinstance(allbars, Bars):
+        return allbars[-1]
+
+    return {ticker: bars[-1] for ticker, bars in allbars.items()}
 
 
 async def get_bar_at_timestamp(
-    ticker: str,
+    tickers: tp.Union[str, tp.List[str]],
     *,
     client: AsyncClient,
     timestamp: datetime,
-    interval: ValidInterval = DEFAULT_INTERVAL,
-) -> Bar:
+) -> tp.Union[Bar, tp.Dict[str, Bar]]:
 
-    assert timestamp.tzinfo == pytz.utc, (
-        f"Only timezone aware datetimes with tz={pytz.UTC} are supported, "
-        f"got: timestamp<{timestamp.tzinfo}>"
-    )
     start = timestamp.replace(second=0)
-    end = start + time_period_to_timedelta(interval) * 5
-    bars = await get_bars(
-        ticker, client=client, start=start, end=end, interval=interval
-    )
 
-    return bars[0]
+    allbars = await get_bars(
+        tickers, client=client, start=start, interval="auto", end_default="interval"
+    )
+    if isinstance(allbars, Bars):
+        return allbars[0]
+
+    return {ticker: bars[0] for ticker, bars in allbars.items()}
 
 
 async def get_price_at_timestamp(
-    ticker: str,
+    tickers: tp.Union[str, tp.List[str]],
     *,
     client: AsyncClient,
     timestamp: datetime,
-) -> float:
-    bar = await get_bar_at_timestamp(
-        ticker, client=client, timestamp=timestamp, interval=DEFAULT_INTERVAL
-    )
-    bar_open_date = bar.timestamp
-    bar_close_date = bar_open_date + time_period_to_timedelta(bar.interval)
-    open_delta = timestamp - bar_open_date
-    close_delta = bar_close_date - timestamp
-    if open_delta < close_delta:
-        return bar.open
-    return bar.close
+) -> tp.Union[float, tp.Dict[str, float]]:
+    allbars = await get_bar_at_timestamp(tickers, client=client, timestamp=timestamp)
+    if isinstance(allbars, Bar):
+        return get_closest_price_to_timestamp_from_bar(allbars, timestamp)
+    return {
+        ticker: get_closest_price_to_timestamp_from_bar(bar, timestamp)
+        for ticker, bar in allbars.items()
+    }
+
+
+if __name__ == "__main__":
+    import asyncio
+    from datetime import timedelta
+
+    import pytz
+
+    ticker = "TSLA,AAPL"
+
+    async def main():
+        async with AsyncClient() as client:
+            bars = await get_price_at_timestamp(
+                ticker,
+                client=client,
+                timestamp=datetime.now(tz=pytz.utc) - timedelta(minutes=2),
+            )
+
+        print(bars)
+
+    asyncio.run(main())

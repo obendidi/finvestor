@@ -2,17 +2,28 @@ import typing as tp
 
 from httpx import HTTPError
 
-from finvestor import config
 
-
-class EmptyBars(HTTPError):
-    def __init__(self, ticker: str, resp: tp.Any) -> None:
-        self.resp = resp
-        self.ticker = ticker
-
-    def __str__(self) -> str:
-        assert config.DATA_PROVIDER is not None
-        return (
-            f"{config.DATA_PROVIDER.upper()} (ticker={self.ticker}) "
-            f"responded with empty bars:  {self.resp}"
+class BaseHTTPError(HTTPError):
+    def __init__(
+        self,
+        *,
+        ticker: str,
+        params: tp.Dict[str, tp.Any],
+        status_code: int,
+        error: tp.Any,
+        data_provider: str,
+    ) -> None:
+        message = (
+            f"[{data_provider.upper()}] (ticker={ticker}) "
+            f"(params={params}) responded with (code={status_code}):  "
+            f"{error}"
         )
+        super().__init__(message)
+
+
+class UnprocessableEntity(BaseHTTPError):
+    pass
+
+
+class EmptyBars(BaseHTTPError):
+    pass

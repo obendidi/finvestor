@@ -1,63 +1,45 @@
 import logging
-from datetime import timedelta, datetime
-from typing import Any, Dict
-from pydantic.datetime_parse import (
-    parse_duration as parse_duration_pydantic,
-)
-from pydantic.errors import DurationError
-import pytz
-import re
+import typing as tp
+from datetime import datetime, timedelta
+from itertools import islice
+
+from sortedcontainers import SortedDict
+
+from finvestor.core.timeframe import parse_duration
+from finvestor.data_providers.schemas import Bar, ValidInterval, ValidPeriod
 
 logger = logging.getLogger(__name__)
 
 
-_NUM_DAYS_IN_A_MONTH = 30.417
-_NUM_DAYS_IN_A_YEAR = 365
-_UNITS_REGEX = r"(?P<val>\d+(\.\d+)?)(?P<unit>(mo|s|m|h|d|w|y)?)"
-_UNITS = {
-    "s": "seconds",
-    "m": "minutes",
-    "h": "hours",
-    "d": "days",
-    "w": "weeks",
-}
+def get_closest_value_to_timedelta(
+    data_dict: tp.Mapping[timedelta, tp.Any], key: timedelta
+) -> tp.Any:
+    sorted_dict = SortedDict(data_dict)
+    keys = list(islice(sorted_dict.irange(minimum=key), 1))
+    keys.extend(islice(sorted_dict.irange(maximum=key, reverse=True), 1))
+    closest_key = min(keys, key=lambda k: abs(key - k))
+    return data_dict[closest_key]
 
 
-def parse_duration(value: Any) -> timedelta:
-    try:
-        return parse_duration_pydantic(value)
-    except DurationError:
-        pass
-
-    if value.lower() == "mtd":
-        return timedelta(days=_NUM_DAYS_IN_A_MONTH)
-    if value.lower() == "ytd":
-        return timedelta(days=_NUM_DAYS_IN_A_YEAR)
-
-    kwargs: Dict[str, float] = {}
-    for match in re.finditer(_UNITS_REGEX, value, flags=re.I):
-        unit = match.group("unit").lower()
-        val = float(match.group("val"))
-        if unit == "mo":
-            unit = "d"
-            val = val * _NUM_DAYS_IN_A_MONTH
-        elif unit == "y":
-            unit = "d"
-            val = val * _NUM_DAYS_IN_A_YEAR
-        if unit not in _UNITS:
-            raise DurationError()
-        if _UNITS[unit] in kwargs:
-            kwargs[_UNITS[unit]] += val
-        else:
-            kwargs[_UNITS[unit]] = val
-
-    if not kwargs:
-        raise DurationError()
-    return timedelta(**kwargs)  # type: ignore
+def get_smallest_valid_period_for_interval(interval: ValidInterval) -> ValidPeriod:
+    duration = parse_duration(interval)
+    if duration.days < 1:
+        return "1d"
+    elif duration.days < 5:
+        return "5d"
+    elif interval == "1mo":
+        return "3mo"
+    return "6mo"
 
 
-def pytz_utc_now() -> datetime:
-    return pytz.utc.localize(datetime.utcnow())
+def get_closest_price_to_timestamp_from_bar(bar: Bar, timestamp: datetime) -> float:
+    bar_open_date = bar.timestamp
+    bar_close_date = bar_open_date + parse_duration(bar.interval)
+    open_delta = timestamp - bar_open_date
+    close_delta = bar_close_date - timestamp
+    if open_delta < close_delta:
+        return bar.open
+    return bar.close
 
 
 # def get_smallest_valid_period_for_interval(interval: ValidInterval) -> ValidPeriod:
@@ -101,7 +83,7 @@ def pytz_utc_now() -> datetime:
 #         if end is not None:
 #             if end.tzinfo != pytz.utc:
 #                 raise ValueError(
-#                     f"Only timezone aware datetimes with tz={pytz.UTC} are supported, "
+#                     f"Only timezone aware datetimes with tz={pytz.UTC} are supported,"
 #                     f"got: end<{end.tzinfo}>"
 #                 )
 #             if end < start:

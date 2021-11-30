@@ -1,138 +1,143 @@
+import asyncio
 import logging
-from datetime import datetime
-from typing import Any, Dict, Optional
+import random
+import typing as tp
+from datetime import datetime, timedelta
 
 import numpy as np
 import pytz
 from httpx import AsyncClient, HTTPError
-from pydantic import validate_arguments
 
-from finvestor.core import YAHOO_FINANCE_HEADERS, config
-from finvestor.data_providers.schemas import Bar, Bars
-from finvestor.data_providers.utils import (
-    DEFAULT_INTERVAL,
-    DefaultString,
+from finvestor.data_providers.exceptions import (
+    BaseHTTPError,
+    EmptyBars,
+    UnprocessableEntity,
+)
+from finvestor.data_providers.schemas import (
+    AutoValidInterval,
+    Bar,
+    Bars,
     ValidInterval,
     ValidPeriod,
-    validate_start_end_period_args,
-    time_period_to_timedelta,
 )
-from finvestor.data_providers.yahoo_finance.utils import (
-    get_valid_intervals_for_datetime,
-    get_valid_intervals_for_period,
-    coerce_end_time_to_interval,
+from finvestor.data_providers.yahoo_finance.headers import USER_AGENT_LIST
+from finvestor.data_providers.yahoo_finance.schemas import (
+    YFBarsRequestParams,
+    YfOpenHighLowClose,
 )
+from finvestor.data_providers.yahoo_finance.settings import yf_settings
+from finvestor.data_providers.yahoo_finance.utils import get_valid_intervals
 
 logger = logging.getLogger(__name__)
 
 
-class UnprocessableEntity(HTTPError):
-    pass
-
-
-@validate_arguments(config=dict(arbitrary_types_allowed=True))
-async def get_yahoo_finance_quotes(
+async def get_yahoo_finance_ticker_ohlc(
     ticker: str,
     *,
+    params: YFBarsRequestParams,
     client: AsyncClient,
-    start: Optional[datetime] = None,
-    end: Optional[datetime] = None,
-    period: Optional[ValidPeriod] = None,
-    interval: ValidInterval = DEFAULT_INTERVAL,
-):
-    period, start, end = validate_start_end_period_args(
-        period=period, start=start, end=end
-    )
-    params: Dict[str, Any] = {}
-
-    if start is not None and end is not None:
-        end = coerce_end_time_to_interval(interval, start, end)
-        params["period1"] = int(datetime.timestamp(start))
-        params["period2"] = int(datetime.timestamp(end))
-    elif period is not None:
-        params["range"] = period
-    else:
-        NotImplementedError()
-
-    params["interval"] = interval
-    params["includePrePost"] = True
-    params["events"] = "div,splits"
-
+    interval: ValidInterval,
+    end_default: tp.Literal["now", "interval"] = "now",
+) -> YfOpenHighLowClose:
+    request_params = params.params(end_default=end_default, interval=interval)
     resp = await client.get(
-        url=f"{config.YF_BASE_URL}/v8/finance/chart/{ticker}",
-        params=params,
-        headers=YAHOO_FINANCE_HEADERS,
+        url=f"{yf_settings.BASE_URL}/v8/finance/chart/{ticker.upper()}",
+        params=request_params,
+        headers={"User-Agent": random.choice(USER_AGENT_LIST)},
     )
     if resp.status_code == 422:
-        logger.error(f"Response with code 422 from Y-Finance [{ticker}]: {resp.json()}")
-        raise UnprocessableEntity(resp.json())
+        raise UnprocessableEntity(
+            ticker=ticker,
+            params=request_params,
+            status_code=resp.status_code,
+            error=resp.json(),
+            data_provider="yahoo_finance",
+        )
     response = resp.json()
-    error = response.get("chart", {}).get("error")
-    if error:
-        logger.error(f"Error response from Y-Finance [{ticker}]: {error}")
-        raise UnprocessableEntity(error)
-
     result = response.get("chart", {}).get("result", [])
-    if not len(result):
-        raise UnprocessableEntity(f"Empty response: {response}")
+    error = response.get("chart", {}).get("error")
+    if not result or error or not isinstance(result, list):
+        raise BaseHTTPError(
+            ticker=ticker,
+            params=request_params,
+            status_code=resp.status_code,
+            error=resp.json(),
+            data_provider="yahoo_finance",
+        )
+    timestamp = result[0].get("timestamp")
+    if not timestamp:
+        raise EmptyBars(
+            ticker=ticker,
+            params=request_params,
+            status_code=resp.status_code,
+            error="Empty bars",
+            data_provider="yahoo_finance",
+        )
+    try:
+        ohlc = result[0]["indicators"]["quote"][0]
+        return YfOpenHighLowClose(timestamp=timestamp, **ohlc)
+    except KeyError as error:
+        raise BaseHTTPError(
+            ticker=ticker,
+            params=request_params,
+            status_code=resp.status_code,
+            error=error,
+            data_provider="yahoo_finance",
+        ) from error
 
-    timestamps = result[0].get("timestamp")
-    if not timestamps:
-        raise UnprocessableEntity(f"Empty quotes: {response}")
 
-    ohlc = result[0]["indicators"]["quote"][0]
-    return timestamps, ohlc
-
-
-async def get_yahoo_finance_bars(
+async def get_yahoo_finance_ticker_bars(
     ticker: str,
     *,
     client: AsyncClient,
-    start: Optional[datetime] = None,
-    end: Optional[datetime] = None,
-    period: Optional[ValidPeriod] = None,
-    interval: ValidInterval = DEFAULT_INTERVAL,
+    interval: AutoValidInterval = "auto",
+    period: tp.Optional[ValidPeriod] = None,
+    start: tp.Optional[datetime] = None,
+    end: tp.Optional[datetime] = None,
+    include_prepost: tp.Optional[bool] = None,
+    events: tp.Literal[None, "div", "split", "div,splits"] = None,
+    end_default: tp.Literal["now", "interval"] = "now",
 ) -> Bars:
-    if period is not None and isinstance(interval, DefaultString):
-        _valid_intervals = get_valid_intervals_for_period(interval, period)
-    elif start is not None and isinstance(interval, DefaultString):
-        _valid_intervals = get_valid_intervals_for_datetime(interval, start)
+    params = YFBarsRequestParams(
+        interval=interval,
+        period=period,
+        start=start,
+        end=end,
+        include_prepost=include_prepost,
+        events=events,
+    )
+    if interval == "auto":
+        valid_intervals = get_valid_intervals(period=period, start=start)
     else:
-        _valid_intervals = [interval]
-
-    if interval not in _valid_intervals:
-        delta = (
-            time_period_to_timedelta(period)
-            if period is not None
-            else pytz.utc.localize(datetime.utcnow()) - start  # type: ignore
-        )
-        logger.debug(
-            f"YAHOO-FINANCE - '{ticker}' - '{interval}' data not availlable for "
-            f"timedelta of '{delta.days} days', "
-            f"supported intervals >= '{_valid_intervals[0]}'"
-        )
+        valid_intervals = (interval,)
 
     errors = []
-    for _interval in _valid_intervals:
+    for valid_interval in valid_intervals:
         try:
-            if _interval != interval:
+            if interval != valid_interval:
                 logger.debug(
-                    f"YAHOO-FINANCE - '{ticker}' - Trying with interval {_interval} ..."
+                    f"[YAHOO_FINANCE] (ticker={ticker}): "
+                    f"(auto-)updating interval from '{interval}' to '{valid_interval}'."
                 )
-            timestamps, ohlc = await get_yahoo_finance_quotes(
+                interval = valid_interval
+            ohlc = await get_yahoo_finance_ticker_ohlc(
                 ticker,
+                params=params,
                 client=client,
-                start=start,
-                end=end,
-                period=period,
-                interval=_interval,
+                interval=valid_interval,
+                end_default=end_default,
             )
             break
-        except UnprocessableEntity as error:
+        except (UnprocessableEntity, EmptyBars) as error:
+            logger.error(error)
             errors.append(error)
-            continue
     else:
-        raise UnprocessableEntity(str(errors))
+        if len(errors) == 1:
+            raise errors[0]
+        raise HTTPError(
+            f"[YAHOO_FINANCE] (ticker={ticker}) "
+            f"(valid_intervals={valid_intervals}) responded with:\n{errors}"
+        )
 
     bars = Bars(
         __root__=[
@@ -143,16 +148,68 @@ async def get_yahoo_finance_bars(
                 low=low if low is not None else np.nan,
                 open=open if open is not None else np.nan,
                 volume=volume if volume is not None else np.nan,
-                interval=_interval,
+                interval=valid_interval,
             )
             for timestamp, volume, open, close, low, high in zip(
-                timestamps,
-                ohlc["volume"],
-                ohlc["open"],
-                ohlc["close"],
-                ohlc["low"],
-                ohlc["high"],
+                ohlc.timestamp,
+                ohlc.volume,
+                ohlc.open,
+                ohlc.close,
+                ohlc.low,
+                ohlc.high,
             )
         ]
     )
     return bars
+
+
+async def get_yahoo_finance_bars(
+    tickers: tp.Union[str, tp.List[str]],
+    *,
+    client: AsyncClient,
+    interval: AutoValidInterval = "auto",
+    period: tp.Optional[ValidPeriod] = None,
+    start: tp.Optional[datetime] = None,
+    end: tp.Optional[datetime] = None,
+    include_prepost: tp.Optional[bool] = None,
+    events: tp.Literal[None, "div", "split", "div,splits"] = None,
+    end_default: tp.Literal["now", "interval"] = "now",
+) -> tp.Union[Bars, tp.Dict[str, Bars]]:
+    if isinstance(tickers, str):
+        tickers = tickers.split(",")
+
+    bars = await asyncio.gather(
+        *[
+            get_yahoo_finance_ticker_bars(
+                ticker,
+                client=client,
+                start=start,
+                end=end,
+                period=period,
+                interval=interval,
+                include_prepost=include_prepost,
+                events=events,
+                end_default=end_default,
+            )
+            for ticker in tickers
+        ]
+    )
+    if len(bars) == 1:
+        return bars[0]
+    return dict(zip(tickers, bars))
+
+
+if __name__ == "__main__":
+
+    async def main():
+        async with AsyncClient() as client:
+            end = datetime.now(tz=pytz.UTC) - timedelta(hours=15)
+            start = datetime.now(tz=pytz.UTC) - timedelta(hours=18)
+            result = await get_yahoo_finance_bars(
+                ["TSLA", "AAPL"], start=start, end=end, client=client
+            )
+            for ticker, bars in result.items():
+                print(ticker)
+                print(bars.df().head(5))
+
+    asyncio.run(main())

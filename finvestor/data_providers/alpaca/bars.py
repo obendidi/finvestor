@@ -8,10 +8,10 @@ from httpx import AsyncClient
 from pydantic import root_validator, validate_arguments, validator
 
 from finvestor import config
+from finvestor.core.timeframe import TimeFrame
 from finvestor.data_providers.alpaca.auth import auth
 from finvestor.data_providers.exceptions import EmptyBars
 from finvestor.data_providers.schemas import Bar, Bars, BarsRequestParams
-from finvestor.data_providers.timeframe import TimeFrame
 from finvestor.data_providers.utils import (
     get_closest_value_to_timedelta,
     parse_duration,
@@ -24,11 +24,13 @@ ApcaValidIntervals = tp.Literal[
     "1Min", "2Min", "5Min", "15Min", "30Min", "1Hour", "3Hour", "1Day"
 ]
 ApcaTickerTypes = tp.Literal["stock", "crypto"]
-APCA_VALID_INTERVALS: tp.Tuple[str, ...] = tp.get_args(ApcaValidIntervals)
-APCA_INTERVAL_MAP: tp.Dict[timedelta, str] = {
+APCA_VALID_INTERVALS: tp.Tuple[ApcaValidIntervals, ...] = tp.get_args(
+    ApcaValidIntervals
+)
+APCA_INTERVAL_MAP: tp.Mapping[timedelta, ApcaValidIntervals] = {
     parse_duration(interval): interval for interval in APCA_VALID_INTERVALS
 }
-APCA_TICKER_TYPE_TO_URLPATH: tp.Dict[str, str] = {
+APCA_TICKER_TYPE_TO_URLPATH: tp.Dict[ApcaTickerTypes, str] = {
     "crypto": "/v1beta1/crypto/{ticker}/bars",
     "stock": "/v2/stocks/{ticker}/bars",
 }
@@ -49,7 +51,6 @@ class AlpacaBarsRequestParams(BarsRequestParams):
         duration = get_closest_value_to_timedelta(
             APCA_INTERVAL_MAP, parse_duration(interval.duration)
         )
-        logger.debug(f"[ALPACA] Converting interval {interval} to '{duration}'")
         return TimeFrame(duration)
 
     @root_validator
@@ -74,10 +75,6 @@ class AlpacaBarsRequestParams(BarsRequestParams):
         if period is not None:
             end = now - valid_delay
             start = end - parse_duration(period.duration)
-            logger.debug(
-                f"[ALPACA] Converting period {period} to start={start.isoformat()} and "
-                f"end={end.isoformat()}"
-            )
             return {**values, "start": start, "end": end}
         return values
 
@@ -109,6 +106,7 @@ async def get_alpaca_bars(
     client: AsyncClient,
     ticker_type: ApcaTickerTypes = "stock",
 ) -> Bars:
+
     if isinstance(request_params, BarsRequestParams):
         request_params = request_params.dict()
 
@@ -116,6 +114,10 @@ async def get_alpaca_bars(
         **request_params, historical_data_delay=historical_data_delay
     )
     alpaca_request_params_dict = alpaca_request_params(ticker_type=ticker_type)
+    logger.debug(
+        f"[ALPACA] Getting data for ticker '{ticker}' ({ticker_type}) "
+        f"with params: {alpaca_request_params_dict}"
+    )
 
     urlpath = APCA_TICKER_TYPE_TO_URLPATH[ticker_type].format(ticker=ticker)
 

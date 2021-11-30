@@ -51,5 +51,7 @@
   "python.linting.flake8Enabled": true,
   "python.formatting.provider": "black",
   "python.sortImports.path": "isort",
-  "python.languageServer": "Pylance"
+  "python.languageServer": "Pylance",
+  "python.testing.pytestEnabled": true,
+  "python.testing.autoTestDiscoverOnSaveEnabled": true
 }

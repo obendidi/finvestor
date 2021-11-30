@@ -1,11 +1,13 @@
 import asyncio
 import json
+import random
 from typing import Any, Dict, Optional
 
 from httpx import AsyncClient
 
-from finvestor.core import YAHOO_FINANCE_HEADERS, config
 from finvestor.data_providers.schemas import Asset
+from finvestor.data_providers.yahoo_finance.headers import USER_AGENT_LIST
+from finvestor.data_providers.yahoo_finance.settings import yf_settings
 
 
 async def get_quote_summary(ticker: str, *, client: AsyncClient) -> Dict[str, Any]:
@@ -27,7 +29,8 @@ async def get_quote_summary(ticker: str, *, client: AsyncClient) -> Dict[str, An
         Dict[str, Any]
     """
     resp = await client.get(
-        f"{config.YF_SCRAPE_URL}/{ticker}", headers=YAHOO_FINANCE_HEADERS
+        f"{yf_settings.SCRAPE_URL}/{ticker}",
+        headers={"User-Agent": random.choice(USER_AGENT_LIST)},
     )
 
     resp.raise_for_status()
@@ -62,7 +65,7 @@ async def get_isin(ticker: str, *, client: AsyncClient) -> Optional[str]:
     if "-" in ticker or "^" in ticker:
         return None
     resp = await client.get(
-        url=config.ISIN_SCRAPE_URL,
+        url=yf_settings.ISIN_SCRAPE_URL,
         params={
             "max_results": "25",
             "query": ticker,

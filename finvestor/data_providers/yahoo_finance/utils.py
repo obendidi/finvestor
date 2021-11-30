@@ -1,65 +1,41 @@
-from typing import Dict, List
-from datetime import datetime, timedelta
+import typing as tp
+from datetime import datetime
+
 import pytz
-from finvestor.data_providers.utils import (
-    ValidInterval,
-    ValidPeriod,
-    time_period_to_timedelta,
-)
+
+from finvestor.core.timeframe import parse_duration
+from finvestor.data_providers.schemas import VALID_INTERVALS, ValidInterval, ValidPeriod
+
+YF_MAX_DAYS_TO_VALID_INTERVALS: tp.Dict[float, tp.Tuple[ValidInterval, ...]] = {
+    7: VALID_INTERVALS,  # all
+    59.9: VALID_INTERVALS[1:],  # 2m and above
+    729.9: VALID_INTERVALS[5:],  # 1h and above
+}
+# by default smallest always valid is 1d
+YF_DEFAULT_VALID_INTERVALS: tp.Tuple[ValidInterval, ...] = VALID_INTERVALS[6:]
 
 
-class _ValidIntervals:
-    _max_days_to_valid_intervals: Dict[float, List[ValidInterval]] = {
-        7: ["1m", "2m", "5m", "15m", "30m", "1h", "1d", "5d", "1mo", "3mo"],
-        59.9: ["2m", "5m", "15m", "30m", "1h", "1d", "5d", "1mo", "3mo"],
-        729.9: ["1h", "1d", "5d", "1mo", "3mo"],
-    }
-    _default: List[ValidInterval] = ["1d", "5d", "1mo", "3mo"]
+def get_valid_intervals(
+    period: tp.Optional[ValidPeriod] = None,
+    start: tp.Optional[datetime] = None,
+    **kwargs: tp.Any,
+) -> tp.Tuple[ValidInterval, ...]:
+    if period is not None:
+        delta = parse_duration(period)
+    elif start is not None:
+        delta = datetime.now(tz=pytz.UTC) - start
+    else:
+        raise NotImplementedError(f"Missing value: period={period} | start={start}")
 
-    @classmethod
-    def from_timedelta(cls, delta: timedelta) -> List[ValidInterval]:
-        for max_days, valid_intervals in cls._max_days_to_valid_intervals.items():
-            if delta.days <= max_days:
-                return valid_intervals
-        return cls._default
-
-    @classmethod
-    def from_period(cls, period: ValidPeriod) -> List[ValidInterval]:
-        delta = time_period_to_timedelta(period)
-        return cls.from_timedelta(delta)
-
-    @classmethod
-    def from_datetime(cls, _datetime: datetime) -> List[ValidInterval]:
-        now = pytz.utc.localize(datetime.utcnow())
-        delta = now - _datetime
-        return cls.from_timedelta(delta)
+    for max_days, valid_intervals in YF_MAX_DAYS_TO_VALID_INTERVALS.items():
+        if delta.days <= max_days:
+            return valid_intervals
+    return YF_DEFAULT_VALID_INTERVALS
 
 
-def get_valid_intervals_for_period(
-    interval: ValidInterval, range: ValidPeriod
-) -> List[ValidInterval]:
-    valid_intervals = _ValidIntervals.from_period(range)
-    if interval in valid_intervals:
-        idx = valid_intervals.index(interval)
-        return valid_intervals[idx:]
-    return valid_intervals
-
-
-def get_valid_intervals_for_datetime(
-    interval: ValidInterval, _datetime: datetime
-) -> List[ValidInterval]:
-    valid_intervals = _ValidIntervals.from_datetime(_datetime)
-    if interval in valid_intervals:
-        idx = valid_intervals.index(interval)
-        return valid_intervals[idx:]
-    return valid_intervals
-
-
-def coerce_end_time_to_interval(
-    interval: ValidInterval, start: datetime, end: datetime
-) -> datetime:
-
-    delta = time_period_to_timedelta(interval)
-    if start + delta <= end:
-        return end
-    return end + delta
+def get_smallest_valid_interval(
+    period: tp.Optional[ValidPeriod] = None,
+    start: tp.Optional[datetime] = None,
+    **kwargs: tp.Any,
+) -> ValidInterval:
+    return get_valid_intervals(period=period, start=start)[0]
