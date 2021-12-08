@@ -6,11 +6,11 @@ from datetime import datetime
 import numpy as np
 from httpx import (
     AsyncClient,
+    ConnectTimeout,
     HTTPError,
     HTTPStatusError,
     Request,
     Response,
-    ConnectTimeout,
 )
 from tenacity import TryAgain, before_sleep_log, retry, wait_exponential, wait_random
 

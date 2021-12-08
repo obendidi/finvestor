@@ -1,9 +1,10 @@
 import asyncio
-from ta.momentum import RSIIndicator
-from httpx import AsyncClient
-from finvestor.yahoo_finance.api.bars import get_yahoo_finance_ticker_bars
-import matplotlib.pyplot as plt
 
+import matplotlib.pyplot as plt
+from httpx import AsyncClient
+from ta.momentum import RSIIndicator
+
+from finvestor.yahoo_finance.api.bars import get_yahoo_finance_ticker_bars
 
 ticker = "TSLA"
 

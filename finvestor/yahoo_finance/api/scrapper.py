@@ -3,7 +3,7 @@ import json
 import logging
 import typing as tp
 
-from httpx import AsyncClient, HTTPStatusError, ConnectTimeout
+from httpx import AsyncClient, ConnectTimeout, HTTPStatusError
 from tenacity import TryAgain, before_sleep_log, retry, wait_exponential, wait_random
 
 from finvestor.schemas.base import BaseAsset

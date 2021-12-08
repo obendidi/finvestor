@@ -1,23 +1,21 @@
 import functools
-import typing as tp
 import logging
+import typing as tp
 
 import attr
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from httpx import AsyncClient
+from pypfopt import HRPOpt
+from pypfopt.efficient_frontier import EfficientCVaR, EfficientFrontier
+from pypfopt.expected_returns import mean_historical_return
+from pypfopt.risk_models import CovarianceShrinkage
+from tabulate import tabulate
 
 from finvestor.schemas.transaction import Transactions
 from finvestor.yahoo_finance.api.bars import get_yahoo_finance_bars
 from finvestor.yahoo_finance.utils import parse_yf_csv_quotes
-
-from pypfopt.expected_returns import mean_historical_return
-from pypfopt.risk_models import CovarianceShrinkage
-from pypfopt.efficient_frontier import EfficientFrontier
-from pypfopt.efficient_frontier import EfficientCVaR
-from pypfopt import HRPOpt
-from tabulate import tabulate
 
 __all__ = "YFPortfolio"
 
