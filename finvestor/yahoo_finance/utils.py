@@ -6,7 +6,7 @@ from anyio import open_file
 from httpx import AsyncClient
 from rich.progress import track
 
-from finvestor.yahoo_finance.api.scrapper import get_asset
+from finvestor.data_providers.yahoo_finance.scrapper import get_asset
 
 YF_CSV_QUOTES_DROP_COLS = [
     "Current Price",

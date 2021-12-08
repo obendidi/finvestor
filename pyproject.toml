@@ -19,26 +19,16 @@ openpyxl = "^3.0.9"
 pydantic = "^1.8.2"
 typer = "^0.4.0"
 attrs = "^21.2.0"
-alpaca-trade-api = "^1.4.1"
 httpx = "^0.20.0"
 lxml = "^4.6.4"
 python-dotenv = "^0.19.2"
 anyio = "^3.3.4"
 rich = "^10.14.0"
 tenacity = "^8.0.1"
-
-fastapi = {version = "^0.70.0", optional = true}
-databases = {extras = ["sqlite"], version = "^0.5.3", optional = true}
-uvicorn = {extras = ["standard"], version = "^0.15.0", optional = true}
-python-jose = {extras = ["cryptography"], version = "^3.3.0", optional = true}
-jupyter = {version = "^1.0.0", optional = true}
-jupyter-contrib-nbextensions = {version = "^0.5.1", optional = true}
-SQLAlchemy = {extras = ["mypy"], version = "^1.4.27"}
-sortedcontainers = "^2.4.0"
 matplotlib = "^3.5.0"
 pyportfolioopt = "^1.5.1"
 scikit-learn = "^1.0.1"
-ta = "^0.8.0"
+
 
 
 

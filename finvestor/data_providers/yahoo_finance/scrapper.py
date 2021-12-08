@@ -7,8 +7,11 @@ from httpx import AsyncClient, ConnectTimeout, HTTPStatusError
 from tenacity import TryAgain, before_sleep_log, retry, wait_exponential, wait_random
 
 from finvestor.schemas.base import BaseAsset
-from finvestor.yahoo_finance.api.utils import user_agent_header
-from finvestor.yahoo_finance.settings import config
+from finvestor.data_providers.yahoo_finance.utils import (
+    user_agent_header,
+    YF_QUOTE_URI,
+    ISIN_URI,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -24,8 +27,7 @@ async def get_quote_summary(
 
     try:
         resp = await client.get(
-            f"{config.SCRAPE_URL}/{ticker}",
-            headers=user_agent_header(),
+            YF_QUOTE_URI.format(ticker=ticker), headers=user_agent_header()
         )
 
         resp.raise_for_status()
@@ -64,7 +66,7 @@ async def get_isin(ticker: str, *, client: AsyncClient) -> tp.Optional[str]:
     if "-" in ticker or "^" in ticker:
         return None
     resp = await client.get(
-        url=config.ISIN_SCRAPE_URL,
+        ISIN_URI,
         params={
             "max_results": "25",
             "query": ticker,

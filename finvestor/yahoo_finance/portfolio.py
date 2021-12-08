@@ -11,10 +11,9 @@ from pypfopt import HRPOpt
 from pypfopt.efficient_frontier import EfficientCVaR, EfficientFrontier
 from pypfopt.expected_returns import mean_historical_return
 from pypfopt.risk_models import CovarianceShrinkage
-from tabulate import tabulate
 
 from finvestor.schemas.transaction import Transactions
-from finvestor.yahoo_finance.api.bars import get_yahoo_finance_bars
+from finvestor.data_providers.yahoo_finance.bars import get_yahoo_finance_bars
 from finvestor.yahoo_finance.utils import parse_yf_csv_quotes
 
 __all__ = "YFPortfolio"

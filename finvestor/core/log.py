@@ -1,15 +1,13 @@
-import importlib.resources
 import logging
 import logging.config
 import typing as tp
 from datetime import datetime
 
-import yaml
 from rich.console import ConsoleRenderable
 from rich.logging import RichHandler as _RichHandler
 from rich.traceback import Traceback
 
-import finvestor.core
+from pydantic.utils import deep_update
 
 
 class RichHandler(_RichHandler):
@@ -47,8 +45,34 @@ class RichHandler(_RichHandler):
         return log_renderable
 
 
-def setup_logging() -> None:
-    config = yaml.safe_load(
-        importlib.resources.read_text(finvestor.core, "logging.yml")
-    )
+DEFAULT_CONFIG = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "default": {
+            "datefmt": "%Y-%m-%dT%H:%M:%S%z",
+            "format": "%(asctime)s %(name)s %(levelname)s %(message)s",
+        }
+    },
+    "handlers": {
+        "default": {"class": RichHandler},
+    },
+    "root": {"level": "DEBUG", "handlers": ["default"], "propogate": False},
+    # "loggers": {
+    #     "finvestor": {"level": "DEBUG"},
+    #     "httpx": {"level": "INFO"},
+    #     "matplotlib": {"level": "INFO"},
+    #     "PIL": {"level": "INFO"},
+    # },
+}
+
+
+def setup_logging(
+    update_config: tp.Optional[tp.Dict[str, tp.Any]] = None,
+) -> None:
+    if update_config is not None:
+        config = deep_update(DEFAULT_CONFIG, update_config)
+    else:
+        config = DEFAULT_CONFIG
+
     logging.config.dictConfig(config)
