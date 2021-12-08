@@ -1,4 +1,4 @@
-from finvestor.data_providers.yahoo_finance.settings import YFSettings
+from finvestor.yahoo_finance.settings import YFSettings
 
 yf_config = YFSettings()
 

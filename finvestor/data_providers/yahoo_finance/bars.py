@@ -20,13 +20,13 @@ from finvestor.data_providers.schemas import (
     ValidInterval,
     ValidPeriod,
 )
-from finvestor.data_providers.yahoo_finance.headers import USER_AGENT_LIST
 from finvestor.data_providers.yahoo_finance.schemas import (
     YFBarsRequestParams,
     YfOpenHighLowClose,
 )
-from finvestor.data_providers.yahoo_finance.settings import yf_settings
 from finvestor.data_providers.yahoo_finance.utils import get_valid_intervals
+from finvestor.yahoo_finance.api.headers import USER_AGENT_LIST
+from finvestor.yahoo_finance.settings import yf_settings
 
 logger = logging.getLogger(__name__)
 

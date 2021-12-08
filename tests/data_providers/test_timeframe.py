@@ -4,7 +4,7 @@ from typing import Literal
 import pytest
 from pydantic import BaseModel, ValidationError
 
-from finvestor.data_providers.timeframe import TimeFrame
+from finvestor.core.timeframe import TimeFrame
 
 
 def test_timeframe_without_subtype():

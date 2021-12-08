@@ -6,7 +6,7 @@ import pytz
 from pydantic import ValidationError
 from pytest_cases import fixture
 
-from finvestor.data_providers.timeframe import TimeFrame
+from finvestor.core.timeframe import TimeFrame
 
 bars_request_params_test_data = [
     pytest.param(

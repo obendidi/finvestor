@@ -1,15 +1,10 @@
-from contextlib import nullcontext as does_not_raise
 from datetime import datetime, timedelta
 
 import pytest
 import pytz
 
-from finvestor.data_providers.alpaca.bars import (
-    AlpacaBarsRequestParams,
-    get_alpaca_bars,
-)
-from finvestor.data_providers.exceptions import EmptyBars
-from finvestor.data_providers.timeframe import TimeFrame
+from finvestor.core.timeframe import TimeFrame
+from finvestor.data_providers.alpaca.bars import AlpacaBarsRequestParams
 
 
 def test_AlpacaBarsRequestParams_data_validation(alpaca_bars_request_params_test_cases):
@@ -85,72 +80,81 @@ def test_AlpacaBarsRequestParams___call___(ticker_type, kwargs):
     }
 
 
-@pytest.mark.parametrize(
-    "ticker,start,end,ticker_type,limit,expectation",
-    [
-        pytest.param(
-            "TSLA",
-            datetime(year=2021, month=11, day=26, hour=15, tzinfo=pytz.utc),
-            datetime(year=2021, month=11, day=26, hour=15, tzinfo=pytz.utc)
-            + timedelta(minutes=5),
-            "stock",
-            10000,
-            does_not_raise(),
-            id="TSLA-stock-2021-11-26T15-00-00",
-        ),
-        pytest.param(
-            "TSLA",
-            datetime(year=2021, month=11, day=26, hour=15, tzinfo=pytz.utc),
-            datetime(year=2021, month=11, day=26, hour=15, tzinfo=pytz.utc)
-            + timedelta(minutes=5),
-            "stock",
-            2,
-            does_not_raise(),
-            id="TSLA-stock-2021-11-26T15-00-00-limit-2",
-        ),
-        pytest.param(
-            "BTCUSD",
-            datetime(year=2021, month=11, day=26, hour=15, tzinfo=pytz.utc),
-            datetime(year=2021, month=11, day=26, hour=15, tzinfo=pytz.utc)
-            + timedelta(minutes=5),
-            "crypto",
-            10000,
-            does_not_raise(),
-            id="BTCUSD-crypto-2021-11-26T15-00-00",
-        ),
-        pytest.param(
-            "ADAUSD",  # ADA not supported at times of writing on alpaca
-            datetime(year=2021, month=11, day=26, hour=15, tzinfo=pytz.utc),
-            datetime(year=2021, month=11, day=26, hour=15, tzinfo=pytz.utc)
-            + timedelta(minutes=5),
-            "crypto",
-            10000,
-            pytest.raises(EmptyBars),
-            id="ADAUSD-crypto-2021-11-26T15-00-00",
-        ),
-        pytest.param(
-            "TSLA",  # market is closed on a sunday so empty bar
-            datetime(year=2021, month=11, day=28, hour=15, tzinfo=pytz.utc),
-            datetime(year=2021, month=11, day=28, hour=15, tzinfo=pytz.utc)
-            + timedelta(minutes=5),
-            "stock",
-            10000,
-            pytest.raises(EmptyBars),
-            id="TSLA-stock-2021-11-28T15-00-00",
-        ),
-    ],
-)
-@pytest.mark.vcr
-async def test_get_alpaca_bars(
-    snapshot, async_client, ticker, start, end, ticker_type, limit, expectation
-):
-    request_params = {"start": start, "end": end, "interval": "1Min", "limit": limit}
-    with expectation:
-        bars = await get_alpaca_bars(
-            ticker,
-            request_params,
-            historical_data_delay=timedelta(0),
-            client=async_client,
-            ticker_type=ticker_type,
-        )
-        assert bars == snapshot
+# _START = datetime(year=2021, month=11, day=26, hour=15, tzinfo=pytz.utc)
+
+
+# @pytest.mark.parametrize(
+#     "ticker,ticker_type,request_params,expectation",
+#     [
+#         pytest.param(
+#             "TSLA",
+#             "stock",
+#             {"start": _START, "end": _START + timedelta(minutes=2), "interval": "1Min"},
+#             does_not_raise(),
+#             id="bars-TSLA-stock-dict-params",
+#         ),
+#         pytest.param(
+#             "TSLA",
+#             "stock",
+#             BarsRequestParams(
+#                 start=_START,
+#                 end=_START + timedelta(minutes=1),
+#                 interval=TimeFrame("1Min"),
+#             ),
+#             does_not_raise(),
+#             id="bars-TSLA-stock-BarsRequestParams",
+#         ),
+#         pytest.param(
+#             "TSLA",
+#             "stock",
+#             {
+#                 "start": _START,
+#                 "end": _START + timedelta(minutes=5),
+#                 "interval": "1Min",
+#                 "limit": 2,
+#             },
+#             does_not_raise(),
+#             id="bars-TSLA-stock-limit-2",
+#         ),
+#         pytest.param(
+#             "BTCUSD",
+#             "crypto",
+#             {"start": _START, "end": _START + timedelta(minutes=2), "interval": "1Min"},
+#             does_not_raise(),
+#             id="bars-BTCUSD-crypto",
+#         ),
+#         pytest.param(
+#             "ADAUSD",  # ADA not supported at times of writing on alpaca
+#             "crypto",
+#             {"start": _START, "end": _START + timedelta(minutes=2), "interval": "1Min"},
+#             pytest.raises(EmptyBars),
+#             id="bars-ADAUSD-crypto",
+#         ),
+#         pytest.param(
+#             "TSLA",  # market is closed on a Sunday so empty bar
+#             "stock",
+#             {
+#                 "start": datetime(
+#                     year=2021, month=11, day=28, hour=15, tzinfo=pytz.utc
+#                 ),
+#                 "end": datetime(year=2021, month=11, day=28, hour=16, tzinfo=pytz.utc),
+#                 "interval": "1Min",
+#             },
+#             pytest.raises(EmptyBars),
+#             id="bars-TSLA-stock-weekend",
+#         ),
+#     ],
+# )
+# @pytest.mark.vcr
+# async def test_get_alpaca_bars(
+#     snapshot, async_client, ticker, ticker_type, request_params, expectation
+# ):
+#     with expectation:
+#         bars = await get_alpaca_bars(
+#             ticker,
+#             request_params,
+#             historical_data_delay=timedelta(0),
+#             client=async_client,
+#             ticker_type=ticker_type,
+#         )
+#         assert bars == snapshot

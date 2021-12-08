@@ -3,13 +3,13 @@ from typing import Optional
 import typer
 
 from finvestor import __version__
-from finvestor.etoro.cli import app as etoro_app
+from finvestor.yahoo_finance.cli import app as yf_app
 
 app = typer.Typer(
     help="CLI for managing your finvestor applications.", no_args_is_help=True
 )
 
-app.add_typer(etoro_app, name="etoro", invoke_without_command=True)
+app.add_typer(yf_app, name="yahoo", invoke_without_command=True)
 
 
 def version_callback(value: bool):

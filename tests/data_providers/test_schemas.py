@@ -6,8 +6,8 @@ import numpy as np
 import pandas as pd
 import pytz
 
+from finvestor.core.timeframe import TimeFrame
 from finvestor.data_providers.schemas import Bar, Bars, BarsRequestParams
-from finvestor.data_providers.timeframe import TimeFrame
 
 
 def test_Bars_schema_is_iterable():

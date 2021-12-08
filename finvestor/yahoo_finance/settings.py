@@ -1,7 +1,9 @@
-from pydantic import AnyHttpUrl, BaseSettings
+from pydantic import AnyHttpUrl
+
+from finvestor.core import BaseConfig
 
 
-class YFSettings(BaseSettings):
+class YFConfig(BaseConfig, env_prefix="YAHOO_FINANCE_"):
     BASE_URL: AnyHttpUrl = AnyHttpUrl.build(
         scheme="https",
         host="query2.finance.yahoo.com",
@@ -19,14 +21,5 @@ class YFSettings(BaseSettings):
         path="/ajax/SearchController_Suggest",
     )
 
-    class Config:
-        env_prefix = "YAHOO_FINANCE_"
-        case_sensitive = True
-        env_file = ".env"
-        env_file_encoding = "utf-8"
 
-
-yf_settings = YFSettings()
-
-if __name__ == "__main__":
-    print(yf_settings)
+config = YFConfig()

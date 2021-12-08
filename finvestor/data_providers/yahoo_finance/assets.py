@@ -6,8 +6,8 @@ from typing import Any, Dict, Optional
 from httpx import AsyncClient
 
 from finvestor.data_providers.schemas import Asset
-from finvestor.data_providers.yahoo_finance.headers import USER_AGENT_LIST
-from finvestor.data_providers.yahoo_finance.settings import yf_settings
+from finvestor.yahoo_finance.api.headers import USER_AGENT_LIST
+from finvestor.yahoo_finance.settings import yf_settings
 
 
 async def get_quote_summary(ticker: str, *, client: AsyncClient) -> Dict[str, Any]:

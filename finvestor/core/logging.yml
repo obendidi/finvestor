@@ -23,17 +23,11 @@ handlers:
     stream: ext://sys.stdout
   rich:
     class: finvestor.core.logging.RichHandler
-  file:
-    class: logging.FileHandler
-    formatter: simple
-    filename: finvestor.log
-    mode: a
 
 # Root Logger Configuration
 root:
   # Logger Level -
-  # Set to NOTSET if you have child loggers with pre-defined levels
-  level: NOTSET
+  level: DEBUG
   handlers: [rich]
   # Stop propogation from child to parent in Logging hierarchy
   propogate: no
@@ -43,7 +37,7 @@ loggers:
     level: DEBUG
   httpx:
     level: INFO
-  uvicorn:
+  matplotlib:
     level: INFO
-  sqlalchemy.engine:
+  PIL:
     level: INFO

@@ -5,13 +5,13 @@ import pytz
 from pydantic import BaseModel, validator
 from pydantic.fields import ModelField
 
-from finvestor.schemas.base import BaseDataFrameModel
+from finvestor.schemas.base import BaseAsset, BaseDataFrameModel
 
 __all__ = ("Transaction", "Transactions")
 
 
 class Transaction(BaseModel):
-    ticker: str
+    asset: BaseAsset
     units: float
     open_date: datetime
     open_rate: float
@@ -19,7 +19,7 @@ class Transaction(BaseModel):
     currency: str = "USD"
     close_date: tp.Optional[datetime]
     close_rate: tp.Optional[float]
-    commission: tp.Optional[float]
+    commission: float = 0.0
 
     @validator("open_date", "close_date")
     def check_tz_utc(cls, value: datetime, field: ModelField) -> datetime:
