@@ -2,9 +2,7 @@ import typing as tp
 from collections.abc import Sequence
 
 import pandas as pd
-from pydantic import BaseModel, Extra, Field, PrivateAttr
-
-__all__ = ("BaseDataFrameModel", "BaseAsset")
+from pydantic import BaseModel, Extra, PrivateAttr
 
 T = tp.TypeVar("T", bound="BaseDataFrameModel")
 SequenceOfObjects = tp.Sequence[tp.Union[BaseModel, tp.Mapping]]
@@ -39,25 +37,3 @@ class BaseDataFrameModel(BaseModel, Sequence):
     class Config:
         extra = Extra.forbid
         allow_mutation = False
-
-
-class BaseAsset(BaseModel):
-    ticker: str = Field(..., repr=True)
-    name: tp.Optional[str] = Field(repr=False)
-    type: tp.Optional[str] = Field(repr=False)
-    currency: tp.Optional[str] = Field(repr=False)
-    exchange: tp.Optional[str] = Field(repr=False)
-    exchange_timezone: tp.Optional[str] = Field(repr=False)
-    market: tp.Optional[str] = Field(repr=False)
-    isin: tp.Optional[str] = Field(repr=False)
-    country: tp.Optional[str] = Field(repr=False)
-    sector: tp.Optional[str] = Field(repr=False)
-    industry: tp.Optional[str] = Field(repr=False)
-
-    def __repr_args__(self):
-        # TODO: remove when latest version of pydantic is deployed
-        return [
-            (k, v)
-            for k, v in self.__dict__.items()
-            if self.__fields__[k].field_info.extra.get("repr", True)
-        ]

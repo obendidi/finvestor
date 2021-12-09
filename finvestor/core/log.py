@@ -3,11 +3,10 @@ import logging.config
 import typing as tp
 from datetime import datetime
 
+from pydantic.utils import deep_update
 from rich.console import ConsoleRenderable
 from rich.logging import RichHandler as _RichHandler
 from rich.traceback import Traceback
-
-from pydantic.utils import deep_update
 
 
 class RichHandler(_RichHandler):

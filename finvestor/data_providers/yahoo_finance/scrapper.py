@@ -6,12 +6,12 @@ import typing as tp
 from httpx import AsyncClient, ConnectTimeout, HTTPStatusError
 from tenacity import TryAgain, before_sleep_log, retry, wait_exponential, wait_random
 
-from finvestor.schemas.base import BaseAsset
 from finvestor.data_providers.yahoo_finance.utils import (
-    user_agent_header,
-    YF_QUOTE_URI,
     ISIN_URI,
+    YF_QUOTE_URI,
+    user_agent_header,
 )
+from finvestor.schemas.asset import Asset
 
 logger = logging.getLogger(__name__)
 
@@ -80,7 +80,7 @@ async def get_isin(ticker: str, *, client: AsyncClient) -> tp.Optional[str]:
     return resp.text.split(search_str)[1].split('"')[0].split("|")[0]
 
 
-async def get_asset(ticker: str, *, client: AsyncClient) -> BaseAsset:
+async def get_asset(ticker: str, *, client: AsyncClient) -> Asset:
     summary, isin = await asyncio.gather(
         get_quote_summary(ticker, client=client), get_isin(ticker, client=client)
     )
@@ -91,7 +91,7 @@ async def get_asset(ticker: str, *, client: AsyncClient) -> BaseAsset:
     short_name = quote_type.get("shortName")
     name = summary_profile.get("name")
 
-    return BaseAsset(
+    return Asset(
         ticker=ticker,
         name=long_name or short_name or name,
         type=quote_type.get("quoteType"),

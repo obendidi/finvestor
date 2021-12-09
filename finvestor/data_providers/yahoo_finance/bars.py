@@ -14,15 +14,15 @@ from httpx import (
 )
 from tenacity import TryAgain, before_sleep_log, retry, wait_exponential, wait_random
 
-from finvestor.schemas.bar import Bar, Bars
 from finvestor.data_providers.yahoo_finance.utils import (
+    YF_CHART_URI,
     AutoValidInterval,
     ValidPeriod,
     YFBarsRequestParams,
     get_valid_intervals,
     user_agent_header,
-    YF_CHART_URI,
 )
+from finvestor.schemas.bar import Bar, Bars
 
 logger = logging.getLogger(__name__)
 
