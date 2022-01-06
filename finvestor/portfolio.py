@@ -3,8 +3,8 @@ from datetime import datetime
 
 from httpx import AsyncClient
 
-from finvestor.data_providers.yahoo_finance import load_yf_csv_quotes
 from finvestor.schemas.transaction import Transactions
+from finvestor.yahoo_finance import load_yf_csv_quotes
 
 
 class Portfolio:

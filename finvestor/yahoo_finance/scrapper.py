@@ -6,12 +6,8 @@ import typing as tp
 from httpx import AsyncClient, ConnectTimeout, HTTPStatusError
 from tenacity import TryAgain, before_sleep_log, retry, wait_exponential, wait_random
 
-from finvestor.data_providers.yahoo_finance.utils import (
-    ISIN_URI,
-    YF_QUOTE_URI,
-    user_agent_header,
-)
 from finvestor.schemas.asset import Asset
+from finvestor.yahoo_finance.utils import ISIN_URI, YF_QUOTE_URI, user_agent_header
 
 logger = logging.getLogger(__name__)
 

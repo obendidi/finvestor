@@ -8,7 +8,7 @@ import pytz
 from httpx import AsyncClient
 
 from finvestor.data_providers.bars import get_price_at_timestamp
-from finvestor.data_providers.yahoo_finance.assets import get_asset
+from finvestor.yahoo_finance.assets import get_asset
 
 logger = logging.getLogger(__name__)
 

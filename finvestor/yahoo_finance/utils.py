@@ -1,12 +1,11 @@
 import random
 import typing as tp
-from datetime import datetime
+from datetime import datetime, timezone
 
-import pytz
 from pydantic import BaseModel, Field, validator
 from pydantic.fields import ModelField
 
-from finvestor.core.timeframe import parse_duration
+from finvestor.utils.duration import parse_duration
 
 YF_CHART_URI = "https://query2.finance.yahoo.com/v8/finance/chart/{ticker}"
 YF_QUOTE_URI = "https://finance.yahoo.com/quote/{ticker}"
@@ -29,6 +28,7 @@ MAX_DAYS_TO_VALID_INTERVALS: tp.Dict[float, tp.Tuple[ValidInterval, ...]] = {
 }
 # by default smallest always valid interval is 1d
 DEFAULT_VALID_INTERVALS: tp.Tuple[ValidInterval, ...] = VALID_INTERVALS[6:]
+
 
 # List of user agent taken from:
 # https://github.com/dpguthrie/yahooquery/blob/a30cc310bf5eb4b5ce5eadeafe51d589995ea9fd/yahooquery/utils/__init__.py#L15
@@ -79,8 +79,8 @@ class YFBarsRequestParams(BaseModel):
         elif isinstance(value, datetime):
             if value.tzinfo is None or value.tzinfo.utcoffset(value) is None:
                 raise ValueError(f"Missing {field.name} timezone info: {value}")
-            if value.tzinfo != pytz.UTC:
-                value = value.astimezone(pytz.UTC)
+            if value.tzinfo != timezone.utc:
+                value = value.astimezone(timezone.utc)
 
             return int(datetime.timestamp(value))
         else:
@@ -98,9 +98,19 @@ def get_valid_intervals(params: YFBarsRequestParams) -> tp.Tuple[ValidInterval, 
     if params.period is not None:
         delta = parse_duration(params.period)
     elif params.start is not None:
-        delta = datetime.now(tz=pytz.UTC) - datetime.fromtimestamp(params.start)
+        delta = datetime.now(tz=timezone.utc) - datetime.fromtimestamp(params.start)
 
     for max_days, valid_intervals in MAX_DAYS_TO_VALID_INTERVALS.items():
         if delta.days <= max_days:
             return valid_intervals
     return DEFAULT_VALID_INTERVALS
+
+
+def extract_tickers_list(tickers: tp.Union[str, tp.List[str]]) -> tp.List[str]:
+    if isinstance(tickers, str):
+        return tickers.split(",")
+    else:
+        _tickers = []
+        for ticker in tickers:
+            _tickers.extend(extract_tickers_list(ticker))
+        return _tickers

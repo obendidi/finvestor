@@ -14,15 +14,16 @@ from httpx import (
 )
 from tenacity import TryAgain, before_sleep_log, retry, wait_exponential, wait_random
 
-from finvestor.data_providers.yahoo_finance.utils import (
+from finvestor.schemas.bar import Bar, Bars
+from finvestor.yahoo_finance.utils import (
     YF_CHART_URI,
     AutoValidInterval,
     ValidPeriod,
     YFBarsRequestParams,
     get_valid_intervals,
     user_agent_header,
+    extract_tickers_list,
 )
-from finvestor.schemas.bar import Bar, Bars
 
 logger = logging.getLogger(__name__)
 
@@ -190,8 +191,8 @@ async def get_yahoo_finance_bars(
     include_prepost: tp.Optional[bool] = None,
     events: tp.Literal[None, "div", "split", "div,splits"] = "div,splits",
 ) -> tp.Dict[str, Bars]:
-    if isinstance(tickers, str):
-        tickers = tickers.split(",")
+
+    tickers = extract_tickers_list(tickers)
 
     bars = await asyncio.gather(
         *[

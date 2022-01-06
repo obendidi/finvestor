@@ -2,11 +2,8 @@ import re
 import typing as tp
 from datetime import timedelta
 
-import attr
-from pydantic import ValidationError
 from pydantic.datetime_parse import parse_duration as parse_duration_pydantic
 from pydantic.errors import DurationError
-from pydantic.fields import ModelField
 
 _NUM_DAYS_IN_A_MONTH = 30.417
 _NUM_DAYS_IN_A_YEAR = 365
@@ -50,37 +47,10 @@ def parse_duration(value: tp.Any) -> timedelta:
 
     if not kwargs:
         raise DurationError()
-    return timedelta(**kwargs)  # type: ignore
+    return timedelta(**kwargs)
 
 
-TimeFrameType = tp.TypeVar("TimeFrameType")
-
-
-@attr.s
-class TimeFrame(tp.Generic[TimeFrameType]):
-
-    duration = attr.ib(eq=parse_duration, order=parse_duration)
-
-    @classmethod
-    def __get_validators__(cls):
-        yield cls.validate
-
-    @classmethod
-    def validate(cls, value: tp.Any, field: ModelField):
-        if not field.sub_fields:
-            if not isinstance(value, cls):
-                raise TypeError(
-                    f"No subField provided, Expected <class '{cls.__name__}'>, "
-                    f"got {type(value)} (value={value})"
-                )
-            return value
-
-        sub_field = field.sub_fields[0]
-
-        if not isinstance(value, cls):
-            value = cls(value)
-
-        _, error = sub_field.validate(value.duration, {}, loc="duration")
-        if error:
-            raise ValidationError([error], cls)  # type: ignore
-        return value
+if __name__ == "__main__":
+    cases = ["1d", "1Min", "1Day", "1Min20Sec", timedelta(minutes=5), "4mo", "1y"]
+    for case in cases:
+        print(f"'{case}' --> '{parse_duration(case)}'")

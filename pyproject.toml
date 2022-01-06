@@ -13,44 +13,26 @@ finvestor = "finvestor.cli:app"
 
 [tool.poetry.dependencies]
 python = "^3.8"
-toml = "^0.10.2"
-pandas = "^1.3.4"
-openpyxl = "^3.0.9"
-pydantic = "^1.8.2"
-typer = "^0.4.0"
-attrs = "^21.2.0"
-httpx = "^0.20.0"
-lxml = "^4.6.4"
-python-dotenv = "^0.19.2"
-anyio = "^3.3.4"
-rich = "^10.14.0"
+httpx = "^0.21.1"
+httpx-cache = "^0.4.0"
+rich = "^10.16.2"
+pydantic = "^1.9.0"
+numpy = "^1.22.0"
+pandas = "^1.3.5"
 tenacity = "^8.0.1"
-matplotlib = "^3.5.0"
-pyportfolioopt = "^1.5.1"
-scikit-learn = "^1.0.1"
+typer = "^0.4.0"
+
 
 [tool.poetry.dev-dependencies]
 black = {version = "^21.9b0", allow-prereleases = true}
-mypy = "^0.910"
+mypy = "^0.930"
 isort = "^5.9.3"
 flake8 = "^4.0.1"
 pytest = "^6.2.5"
 pytest-cov = "^3.0.0"
-syrupy = "^1.5.0"
-pandas-stubs = "^1.2.0"
 pre-commit = "^2.15.0"
-types-pytz = "^2021.3.0"
-respx = "^0.18.2"
-types-attrs = "^19.1.0"
 types-PyYAML = "^6.0.1"
-pytest-recording = "^0.12.0"
-pytest-cases = "^3.6.5"
-pytest-mock = "^3.6.1"
 
-
-[tool.poetry.extras]
-jupyter = ["jupyter", "jupyter-contrib-nbextensions"]
-web = ["fastapi", "databases", "uvicorn", "python-jose"]
 
 [build-system]
 requires = ["poetry-core>=1.10.0"]
