@@ -1,6 +1,6 @@
 # Finvestor
 
-[![codecov](https://codecov.io/gh/bendidi/finvestor/branch/main/graph/badge.svg?token=8QOQJWIP64)](https://codecov.io/gh/bendidi/finvestor)
+[![codecov](https://codecov.io/gh/obendidi/httpx-cache/branch/main/graph/badge.svg?token=FHHRA6F17X)](https://codecov.io/gh/obendidi/httpx-cache)
 
 ## Disclosure
 
